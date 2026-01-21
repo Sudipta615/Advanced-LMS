@@ -25,6 +25,28 @@
     --ring: 238 76% 58%;
     --radius: 0.5rem;
   }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 238 76% 58%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 238 76% 58%;
+  }
 }
 
 @layer base {
@@ -33,5 +55,50 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Accessibility: Skip to main content link */
+  .skip-link {
+    @apply absolute -top-[100%] left-4 z-[9999] bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium;
+    transition: top 0.3s;
+  }
+
+  .skip-link:focus {
+    @apply top-4;
+  }
+
+  /* Accessibility: Improved focus indicators for keyboard navigation */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+
+  /* Accessibility: Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Accessibility: Ensure text is selectable */
+  * {
+    @apply select-none;
+  }
+
+  p, h1, h2, h3, h4, h5, h6, span, div, a, button, input, textarea, select {
+    @apply select-text;
+  }
+
+  /* Accessibility: Screen reader only utility */
+  .sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+  }
+
+  .not-sr-only {
+    @apply static w-auto h-auto p-0 m-auto overflow-visible whitespace-normal border-0;
   }
 }
