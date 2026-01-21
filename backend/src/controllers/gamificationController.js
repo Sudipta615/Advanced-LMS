@@ -5,6 +5,7 @@ const StreakService = require('../services/StreakService');
 const LeaderboardService = require('../services/LeaderboardService');
 const { Badge, BadgeCategory, User, sequelize } = require('../models');
 const { ValidationError, DatabaseError } = require('sequelize');
+const { CacheManager, CACHE_TTL, CACHE_KEYS } = require('../utils/cacheManager');
 
 class GamificationController {
   
@@ -178,6 +179,13 @@ class GamificationController {
     try {
       const userId = req.user.id;
       
+      // Try cache
+      const cacheKey = CACHE_KEYS.USER_BADGES(userId);
+      const cached = await CacheManager.get(cacheKey);
+      if (cached) {
+        return res.status(200).json(cached);
+      }
+      
       const userBadges = await BadgeService.getUnlockedBadges(userId);
       
       const badgesWithDetails = userBadges.map(userBadge => ({
@@ -189,13 +197,18 @@ class GamificationController {
         pointsAwarded: userBadge.Badge.points_awarded
       }));
       
-      res.status(200).json({
+      const response = {
         success: true,
         data: {
           badges: badgesWithDetails,
           count: badgesWithDetails.length
         }
-      });
+      };
+      
+      // Cache the response
+      await CacheManager.set(cacheKey, response, CACHE_TTL.BADGES);
+      
+      res.status(200).json(response);
     } catch (error) {
       console.error('Error getting user badges:', error);
       next(error);

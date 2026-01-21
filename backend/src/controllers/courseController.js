@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 const { sequelize } = require('../config/database');
 const AuditLogService = require('../services/AuditLogService');
 const SystemSettingsService = require('../services/systemSettingsService');
+const { CacheManager, CACHE_TTL, CACHE_KEYS } = require('../utils/cacheManager');
 
 class CourseController {
   
@@ -10,6 +11,18 @@ class CourseController {
   static async getAllCourses(req, res, next) {
     try {
       const { page = 1, limit = 10, search, category, difficulty, tags, status } = req.query;
+      
+      // Create cache key (only cache for non-authenticated users or published courses)
+      const cacheKey = CACHE_KEYS.COURSES_LIST(page, limit, search || '');
+      const shouldCache = !req.user || (!status && !tags); // Don't cache filtered/user-specific results
+      
+      // Try to get from cache
+      if (shouldCache) {
+        const cached = await CacheManager.get(cacheKey);
+        if (cached) {
+          return res.json(cached);
+        }
+      }
       
       const offset = (page - 1) * limit;
       
@@ -20,8 +33,12 @@ class CourseController {
         where.title = { [Op.iLike]: `%${search}%` };
       }
       
+      // Fix N+1: Get category by slug without separate query
       if (category) {
-        const categoryRecord = await Category.findOne({ where: { slug: category } });
+        const categoryRecord = await Category.findOne({ 
+          where: { slug: category },
+          attributes: ['id']
+        });
         if (categoryRecord) {
           where.category_id = categoryRecord.id;
         }
@@ -35,70 +52,86 @@ class CourseController {
         where.status = status;
       }
       
-      // Handle tags filtering
-      let courses;
-      if (tags) {
-        const tagArray = tags.split(',').map(tag => tag.trim());
-        courses = await Course.findAll({
+      // Optimize: Get total count and courses in parallel
+      const [total, courses] = await Promise.all([
+        Course.count({ where }),
+        Course.findAll({
           where,
           include: [
-            { model: Category, as: 'category' },
-            { model: User, as: 'instructor', attributes: ['id', 'first_name', 'last_name'] }
+            { 
+              model: Category, 
+              as: 'category',
+              attributes: ['id', 'name', 'slug']
+            },
+            { 
+              model: User, 
+              as: 'instructor', 
+              attributes: ['id', 'first_name', 'last_name']
+            }
+          ],
+          attributes: [
+            'id', 'title', 'description', 'slug', 'thumbnail_url',
+            'difficulty_level', 'status', 'estimated_duration',
+            'created_at', 'updated_at', 'instructor_id', 'category_id'
           ],
           limit: parseInt(limit),
           offset: parseInt(offset),
           order: [['created_at', 'DESC']]
-        });
-        
-        // Filter by tags
-        courses = courses.filter(course => {
-          return tagArray.every(tag => course.tags.includes(tag));
-        });
-      } else {
-        courses = await Course.findAll({
-          where,
-          include: [
-            { model: Category, as: 'category' },
-            { model: User, as: 'instructor', attributes: ['id', 'first_name', 'last_name'] }
-          ],
-          limit: parseInt(limit),
-          offset: parseInt(offset),
-          order: [['created_at', 'DESC']]
-        });
-      }
-      
-      // Get total count for pagination
-      const total = await Course.count({ where });
+        })
+      ]);
       
       // Add enrollment status if user is authenticated
+      let coursesData = courses;
       if (req.user) {
         const userId = req.user.id;
-        const enrollments = await Enrollment.findAll({
-          where: { user_id: userId, course_id: courses.map(c => c.id) },
-          attributes: ['course_id', 'status', 'completion_percentage']
-        });
+        const courseIds = courses.map(c => c.id);
         
-        courses = courses.map(course => {
-          const enrollment = enrollments.find(e => e.course_id === course.id);
+        // Optimize: Get all enrollments in one query
+        const enrollments = courseIds.length > 0 ? await Enrollment.findAll({
+          where: { 
+            user_id: userId, 
+            course_id: { [Op.in]: courseIds }
+          },
+          attributes: ['course_id', 'status', 'completion_percentage'],
+          raw: true
+        }) : [];
+        
+        // Create enrollment map for O(1) lookup
+        const enrollmentMap = new Map(
+          enrollments.map(e => [e.course_id, e])
+        );
+        
+        coursesData = courses.map(course => {
+          const courseJson = course.toJSON();
+          const enrollment = enrollmentMap.get(course.id);
           return {
-            ...course.toJSON(),
+            ...courseJson,
             isEnrolled: !!enrollment,
             enrollmentStatus: enrollment ? enrollment.status : null,
             completionPercentage: enrollment ? enrollment.completion_percentage : 0
           };
         });
+      } else {
+        coursesData = courses.map(c => c.toJSON());
       }
       
-      res.json({
+      const response = {
         success: true,
-        data: courses,
+        data: coursesData,
         pagination: {
           total,
           page: parseInt(page),
           limit: parseInt(limit),
           totalPages: Math.ceil(total / limit)
         }
-      });
+      };
+      
+      // Cache the response (only for unauthenticated users)
+      if (shouldCache && !req.user) {
+        await CacheManager.set(cacheKey, response, CACHE_TTL.COURSES_LIST);
+      }
+      
+      res.json(response);
     } catch (error) {
       next(error);
     }
@@ -109,45 +142,101 @@ class CourseController {
     try {
       const { id } = req.params;
       
-      const course = await Course.findOne({
-        where: { id },
-        include: [
-          { model: Category, as: 'category' },
-          { model: User, as: 'instructor', attributes: ['id', 'first_name', 'last_name', 'profile_picture_url'] },
-          {
-            model: Section,
-            as: 'sections',
+      // Try cache for course details (without user-specific data)
+      const cacheKey = CACHE_KEYS.COURSE_DETAILS(id);
+      let courseData = await CacheManager.get(cacheKey);
+      
+      if (!courseData) {
+        // Optimize: Get course with all related data in one query
+        const course = await Course.findOne({
+          where: { id },
+          include: [
+            { 
+              model: Category, 
+              as: 'category',
+              attributes: ['id', 'name', 'slug']
+            },
+            { 
+              model: User, 
+              as: 'instructor', 
+              attributes: ['id', 'first_name', 'last_name', 'profile_picture_url']
+            },
+            {
+              model: Section,
+              as: 'sections',
+              attributes: ['id', 'title', 'description', 'display_order', 'course_id'],
+              include: [{
+                model: Lesson,
+                as: 'lessons',
+                attributes: ['id', 'title', 'description', 'lesson_type', 'content_url', 'duration_minutes', 'display_order', 'section_id']
+              }],
+              order: [['display_order', 'ASC']]
+            }
+          ],
+          order: [
+            [{ model: Section, as: 'sections' }, 'display_order', 'ASC'],
+            [{ model: Section, as: 'sections' }, { model: Lesson, as: 'lessons' }, 'display_order', 'ASC']
+          ]
+        });
+        
+        if (!course) {
+          return res.status(404).json({
+            success: false,
+            message: 'Course not found'
+          });
+        }
+        
+        // Check if course is published or user has permission
+        if (course.status !== 'published' && (!req.user || (req.user.id !== course.instructor_id && req.user.role.name !== 'admin'))) {
+          return res.status(403).json({
+            success: false,
+            message: 'Access denied'
+          });
+        }
+        
+        // Optimize: Get prerequisites and tags in parallel
+        const [prerequisites, tags] = await Promise.all([
+          CoursePrerequisite.findAll({
+            where: { course_id: course.id },
             include: [{
-              model: Lesson,
-              as: 'lessons'
-            }]
-          }
-        ]
-      });
-      
-      if (!course) {
-        return res.status(404).json({
-          success: false,
-          message: 'Course not found'
-        });
+              model: Course,
+              as: 'prerequisite_course',
+              attributes: ['id', 'title', 'slug']
+            }],
+            attributes: ['prerequisite_course_id', 'min_completion_percentage']
+          }),
+          CourseTag.findAll({
+            where: { course_id: course.id },
+            attributes: ['tag'],
+            raw: true
+          })
+        ]);
+        
+        courseData = {
+          ...course.toJSON(),
+          prerequisites: prerequisites.map(p => ({
+            course_id: p.prerequisite_course_id,
+            title: p.prerequisite_course.title,
+            slug: p.prerequisite_course.slug,
+            min_completion_percentage: p.min_completion_percentage
+          })),
+          tags: tags.map(t => t.tag)
+        };
+        
+        // Cache course data (without user-specific enrollment info)
+        await CacheManager.set(cacheKey, courseData, CACHE_TTL.COURSE_DETAILS);
       }
       
-      // Check if course is published or user has permission
-      if (course.status !== 'published' && (!req.user || (req.user.id !== course.instructor_id && req.user.role.name !== 'admin'))) {
-        return res.status(403).json({
-          success: false,
-          message: 'Access denied'
-        });
-      }
-      
-      // Add enrollment status if user is authenticated
+      // Add enrollment status if user is authenticated (not cached)
       let enrollmentStatus = null;
       let completionPercentage = 0;
       let isEnrolled = false;
       
       if (req.user) {
         const enrollment = await Enrollment.findOne({
-          where: { user_id: req.user.id, course_id: course.id }
+          where: { user_id: req.user.id, course_id: id },
+          attributes: ['status', 'completion_percentage'],
+          raw: true
         });
         
         if (enrollment) {
@@ -157,39 +246,14 @@ class CourseController {
         }
       }
       
-      // Get prerequisites
-      const prerequisites = await CoursePrerequisite.findAll({
-        where: { course_id: course.id },
-        include: [{
-          model: Course,
-          as: 'prerequisite_course',
-          attributes: ['id', 'title', 'slug']
-        }]
-      });
-      
-      // Get tags
-      const tags = await CourseTag.findAll({
-        where: { course_id: course.id },
-        attributes: ['tag']
-      });
-      
-      const courseData = {
-        ...course.toJSON(),
-        isEnrolled,
-        enrollmentStatus,
-        completionPercentage,
-        prerequisites: prerequisites.map(p => ({
-          course_id: p.prerequisite_course_id,
-          title: p.prerequisite_course.title,
-          slug: p.prerequisite_course.slug,
-          min_completion_percentage: p.min_completion_percentage
-        })),
-        tags: tags.map(t => t.tag)
-      };
-      
       res.json({
         success: true,
-        data: courseData
+        data: {
+          ...courseData,
+          isEnrolled,
+          enrollmentStatus,
+          completionPercentage
+        }
       });
     } catch (error) {
       next(error);
@@ -247,6 +311,9 @@ class CourseController {
       
       // Log audit
       await AuditLogService.logAction(req.user.id, 'course:create', 'Course', course.id, { title: course.title }, req.ip, req.headers['user-agent']);
+      
+      // Invalidate course caches
+      await CacheManager.invalidateCourseCache();
       
       res.status(201).json({
         success: true,
@@ -357,6 +424,9 @@ class CourseController {
       };
       await AuditLogService.logAction(req.user.id, 'course:update', 'Course', course.id, changes, req.ip, req.headers['user-agent']);
       
+      // Invalidate course caches
+      await CacheManager.invalidateCourseCache(course.id);
+      
       res.json({
         success: true,
         message: submittedForApproval ? 'Course submitted for approval' : 'Course updated successfully',
@@ -404,6 +474,9 @@ class CourseController {
       
       // Log audit
       await AuditLogService.logAction(req.user.id, 'course:delete', 'Course', course.id, { title: course.title }, req.ip, req.headers['user-agent']);
+      
+      // Invalidate course caches
+      await CacheManager.invalidateCourseCache(course.id);
       
       res.json({
         success: true,

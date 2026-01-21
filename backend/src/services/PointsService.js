@@ -1,6 +1,7 @@
 const { User, UserPoint, PointsHistory, sequelize, Quiz, QuizAttempt } = require('../models');
 const NotificationService = require('./NotificationService');
 const { Op } = require('sequelize');
+const { CacheManager } = require('../utils/cacheManager');
 
 class PointsService {
   /**
@@ -352,6 +353,10 @@ class PointsService {
       );
 
       await transaction.commit();
+
+      // Invalidate user cache and leaderboard cache
+      await CacheManager.invalidateUserCache(userId);
+      await CacheManager.invalidateLeaderboardCache();
 
       // Emit notification (optional, after transaction)
       try {

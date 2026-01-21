@@ -1,6 +1,7 @@
-const { Enrollment, Course, User, Lesson, LessonCompletion, CoursePrerequisite } = require('../models');
+const { Enrollment, Course, User, Lesson, LessonCompletion, CoursePrerequisite, Section } = require('../models');
 const { sequelize, Op } = require('sequelize');
 const AuditLogService = require('../services/AuditLogService');
+const { CacheManager, CACHE_TTL, CACHE_KEYS } = require('../utils/cacheManager');
 
 class EnrollmentController {
   
@@ -90,6 +91,9 @@ class EnrollmentController {
       // Log audit
       await AuditLogService.logAction(req.user.id, 'enrollment:create', 'Enrollment', enrollment.id, { course_id: course.id }, req.ip, req.headers['user-agent']);
       
+      // Invalidate caches
+      await CacheManager.invalidateEnrollmentCache(userId, course.id);
+      
       res.status(201).json({
         success: true,
         data: enrollment
@@ -106,6 +110,17 @@ class EnrollmentController {
       const { page = 1, limit = 10, status } = req.query;
       const userId = req.user.id;
       
+      // Try cache (only cache first page without status filter)
+      const cacheKey = CACHE_KEYS.USER_ENROLLMENTS(userId);
+      const shouldCache = page == 1 && !status;
+      
+      if (shouldCache) {
+        const cached = await CacheManager.get(cacheKey);
+        if (cached) {
+          return res.json(cached);
+        }
+      }
+      
       const offset = (page - 1) * limit;
       
       // Build where clause
@@ -115,25 +130,36 @@ class EnrollmentController {
         where.status = status;
       }
       
-      const enrollments = await Enrollment.findAll({
-        where,
-        include: [{
-          model: Course,
-          as: 'course',
-          include: [
-            { model: User, as: 'instructor', attributes: ['id', 'first_name', 'last_name'] },
-            'category'
-          ]
-        }],
-        limit: parseInt(limit),
-        offset: parseInt(offset),
-        order: [['created_at', 'DESC']]
-      });
+      // Optimize: Get count and enrollments in parallel
+      const [total, enrollments] = await Promise.all([
+        Enrollment.count({ where }),
+        Enrollment.findAll({
+          where,
+          include: [{
+            model: Course,
+            as: 'course',
+            attributes: ['id', 'title', 'slug', 'thumbnail_url', 'difficulty_level', 'instructor_id', 'category_id'],
+            include: [
+              { 
+                model: User, 
+                as: 'instructor', 
+                attributes: ['id', 'first_name', 'last_name']
+              },
+              {
+                model: require('../models').Category,
+                as: 'category',
+                attributes: ['id', 'name', 'slug']
+              }
+            ]
+          }],
+          attributes: ['id', 'user_id', 'course_id', 'status', 'completion_percentage', 'enrolled_at', 'completed_at', 'last_accessed_at', 'created_at'],
+          limit: parseInt(limit),
+          offset: parseInt(offset),
+          order: [['created_at', 'DESC']]
+        })
+      ]);
       
-      // Get total count for pagination
-      const total = await Enrollment.count({ where });
-      
-      res.json({
+      const response = {
         success: true,
         data: enrollments,
         pagination: {
@@ -142,7 +168,14 @@ class EnrollmentController {
           limit: parseInt(limit),
           totalPages: Math.ceil(total / limit)
         }
-      });
+      };
+      
+      // Cache the response
+      if (shouldCache) {
+        await CacheManager.set(cacheKey, response, CACHE_TTL.USER_ENROLLMENTS);
+      }
+      
+      res.json(response);
     } catch (error) {
       next(error);
     }
@@ -279,6 +312,9 @@ class EnrollmentController {
       // Log audit
       await AuditLogService.logAction(req.user.id, 'enrollment:delete', 'Enrollment', enrollment.id, { course_id: enrollment.course_id }, req.ip, req.headers['user-agent']);
       
+      // Invalidate caches
+      await CacheManager.invalidateEnrollmentCache(userId, enrollment.course_id);
+      
       res.json({
         success: true,
         message: 'Successfully unenrolled from the course'
@@ -391,6 +427,9 @@ class EnrollmentController {
       
       // Log audit
       await AuditLogService.logAction(req.user.id, 'lesson:complete', 'LessonCompletion', lessonCompletion.id, { lesson_id: lesson.id, enrollment_id: enrollment.id }, req.ip, req.headers['user-agent']);
+      
+      // Invalidate caches
+      await CacheManager.invalidateEnrollmentCache(userId, lesson.section.course_id);
       
       res.json({
         success: true,
