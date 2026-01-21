@@ -48,9 +48,10 @@ const UserBadge = sequelize.define('UserBadge', {
   ]
 });
 
+// Associations
 UserBadge.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 UserBadge.belongsTo(Badge, { foreignKey: 'badge_id', as: 'badge' });
-User.hasMany(UserBadge, { foreignKey: 'user_id', as: 'userBadges' });
-Badge.hasMany(UserBadge, { foreignKey: 'badge_id', as: 'userBadges' });
+
+// Reverse associations defined in User and Badge models
 
 module.exports = UserBadge;

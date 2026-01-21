@@ -44,7 +44,9 @@ const LearningStreak = sequelize.define('LearningStreak', {
   ]
 });
 
+// Associations
 LearningStreak.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-User.hasOne(LearningStreak, { foreignKey: 'user_id', as: 'learningStreak' });
+
+// Reverse association defined in User model
 
 module.exports = LearningStreak;

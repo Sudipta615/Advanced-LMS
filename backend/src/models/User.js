@@ -1,6 +1,12 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 const Role = require('./Role');
+const UserPoint = require('./UserPoint');
+const UserBadge = require('./UserBadge');
+const PointsHistory = require('./PointsHistory');
+const Achievement = require('./Achievement');
+const LearningStreak = require('./LearningStreak');
+const Leaderboard = require('./Leaderboard');
 
 const User = sequelize.define('User', {
   id: {
@@ -82,5 +88,13 @@ const User = sequelize.define('User', {
 
 User.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
 Role.hasMany(User, { foreignKey: 'role_id', as: 'users' });
+
+// Gamification associations
+User.hasOne(UserPoint, { foreignKey: 'user_id', as: 'points' });
+User.hasMany(UserBadge, { foreignKey: 'user_id', as: 'badges' });
+User.hasMany(PointsHistory, { foreignKey: 'user_id', as: 'pointsHistory' });
+User.hasMany(Achievement, { foreignKey: 'user_id', as: 'achievements' });
+User.hasOne(LearningStreak, { foreignKey: 'user_id', as: 'streaks' });
+User.hasMany(Leaderboard, { foreignKey: 'user_id', as: 'leaderboardEntries' });
 
 module.exports = User;
