@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const authRoutes = require('./src/routes/authRoutes');
+const courseRoutes = require('./src/routes/courseRoutes');
+const enrollmentRoutes = require('./src/routes/enrollmentRoutes');
 const errorHandler = require('./src/middleware/errorHandler');
 const { generalLimiter } = require('./src/middleware/rateLimiter');
 
@@ -28,6 +30,8 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

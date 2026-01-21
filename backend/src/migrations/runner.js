@@ -1,5 +1,5 @@
 const { sequelize } = require('../config/database');
-const { Role, User, PasswordResetToken, AuditLog } = require('../models');
+const { Role, User, PasswordResetToken, AuditLog, Category, Course, Section, Lesson, Enrollment, LessonCompletion, CoursePrerequisite, CourseTag } = require('../models');
 
 const runMigrations = async () => {
   try {

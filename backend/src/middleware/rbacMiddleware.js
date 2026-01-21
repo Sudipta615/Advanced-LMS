@@ -7,7 +7,9 @@ const authorizeRole = (...allowedRoles) => {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRoleName = req.user.role && req.user.role.name ? req.user.role.name : req.user.role;
+    
+    if (!allowedRoles.includes(userRoleName)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Insufficient permissions.'
