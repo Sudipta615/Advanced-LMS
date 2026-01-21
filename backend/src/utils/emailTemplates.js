@@ -84,7 +84,87 @@ const getPasswordResetTemplate = (resetLink, firstName) => {
   };
 };
 
+const getWelcomeTemplate = (tempPassword, firstName) => {
+  return {
+    subject: 'Welcome to Advanced LMS',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9f9f9; padding: 30px; }
+          .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: #fff; border: 1px solid #e5e7eb; padding: 10px; border-radius: 6px; display: inline-block; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Welcome to Advanced LMS</h1>
+          </div>
+          <div class="content">
+            <h2>Hi ${firstName},</h2>
+            <p>An administrator created an account for you on Advanced LMS.</p>
+            <p>Your temporary password is:</p>
+            <p class="code">${tempPassword}</p>
+            <p>Please log in and change your password as soon as possible.</p>
+          </div>
+          <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} Advanced LMS. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Hi ${firstName},\n\nAn administrator created an account for you on Advanced LMS.\n\nTemporary password: ${tempPassword}\n\nPlease log in and change your password as soon as possible.`
+  };
+};
+
+const getAdminPasswordResetTemplate = (tempPassword, firstName) => {
+  return {
+    subject: 'Your password has been reset - Advanced LMS',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9f9f9; padding: 30px; }
+          .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: #fff; border: 1px solid #e5e7eb; padding: 10px; border-radius: 6px; display: inline-block; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Password Reset</h1>
+          </div>
+          <div class="content">
+            <h2>Hi ${firstName},</h2>
+            <p>An administrator reset your password for Advanced LMS.</p>
+            <p>Your temporary password is:</p>
+            <p class="code">${tempPassword}</p>
+            <p>Please log in and change your password immediately.</p>
+          </div>
+          <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} Advanced LMS. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Hi ${firstName},\n\nAn administrator reset your password for Advanced LMS.\n\nTemporary password: ${tempPassword}\n\nPlease log in and change your password immediately.`
+  };
+};
+
 module.exports = {
   getEmailVerificationTemplate,
-  getPasswordResetTemplate
+  getPasswordResetTemplate,
+  getWelcomeTemplate,
+  getAdminPasswordResetTemplate
 };

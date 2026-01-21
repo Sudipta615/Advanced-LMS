@@ -25,6 +25,14 @@ const Announcement = require('./Announcement');
 const CourseDiscussion = require('./CourseDiscussion');
 const DiscussionComment = require('./DiscussionComment');
 
+// Phase 4 - Admin & System
+const SystemSetting = require('./SystemSetting');
+const ContentModeration = require('./ContentModeration');
+const UserBan = require('./UserBan');
+const CourseApproval = require('./CourseApproval');
+const BackupLog = require('./BackupLog');
+const UserPreference = require('./UserPreference');
+
 module.exports = {
   Role,
   User,
@@ -51,5 +59,12 @@ module.exports = {
   Notification,
   Announcement,
   CourseDiscussion,
-  DiscussionComment
+  DiscussionComment,
+
+  SystemSetting,
+  ContentModeration,
+  UserBan,
+  CourseApproval,
+  BackupLog,
+  UserPreference
 };

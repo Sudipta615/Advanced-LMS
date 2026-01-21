@@ -1,7 +1,8 @@
-const { Course, Category, Section, Lesson, User, Enrollment, LessonCompletion, CoursePrerequisite, CourseTag } = require('../models');
+const { Course, Category, Section, Lesson, User, Enrollment, LessonCompletion, CoursePrerequisite, CourseTag, CourseApproval } = require('../models');
 const { Op } = require('sequelize');
 const { sequelize } = require('../config/database');
 const AuditLogService = require('../services/AuditLogService');
+const SystemSettingsService = require('../services/systemSettingsService');
 
 class CourseController {
   
@@ -284,6 +285,37 @@ class CourseController {
           message: 'You do not have permission to update this course'
         });
       }
+
+      const requireApproval = await SystemSettingsService.getSettingValue('courses.require_approval', false);
+      const roleName = req.user.role?.name || req.user.role;
+      let submittedForApproval = false;
+
+      if (requireApproval && roleName !== 'admin' && rest.status === 'published') {
+        submittedForApproval = true;
+        rest.status = 'draft';
+        rest.published_at = null;
+
+        const existing = await CourseApproval.findOne({
+          where: { course_id: course.id, status: 'pending' },
+          transaction
+        });
+
+        if (existing) {
+          existing.submitted_by = userId;
+          existing.submitted_at = new Date();
+          existing.reviewer_id = null;
+          existing.reviewer_comments = null;
+          existing.reviewed_at = null;
+          await existing.save({ transaction });
+        } else {
+          await CourseApproval.create({
+            course_id: course.id,
+            submitted_by: userId,
+            status: 'pending',
+            submitted_at: new Date()
+          }, { transaction });
+        }
+      }
       
       // Update course
       const oldData = { ...course.toJSON() };
@@ -327,7 +359,11 @@ class CourseController {
       
       res.json({
         success: true,
-        data: updatedCourse
+        message: submittedForApproval ? 'Course submitted for approval' : 'Course updated successfully',
+        data: {
+          ...updatedCourse.toJSON(),
+          submitted_for_approval: submittedForApproval
+        }
       });
     } catch (error) {
       await transaction.rollback();
