@@ -82,6 +82,35 @@ export default function DashboardPage() {
               The authentication system is fully functional. You can now proceed with Phase 2 development.
             </p>
           </div>
+
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <a
+              href="/student/gamification"
+              className="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            >
+              <div className="text-3xl mb-3">🎮</div>
+              <h4 className="text-lg font-bold text-gray-900 mb-2">Gamification</h4>
+              <p className="text-sm text-gray-600">Track your progress, badges, and leaderboard rankings</p>
+            </a>
+
+            <a
+              href="/student/courses"
+              className="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            >
+              <div className="text-3xl mb-3">📚</div>
+              <h4 className="text-lg font-bold text-gray-900 mb-2">My Courses</h4>
+              <p className="text-sm text-gray-600">View and continue your enrolled courses</p>
+            </a>
+
+            <a
+              href="/courses"
+              className="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            >
+              <div className="text-3xl mb-3">🔍</div>
+              <h4 className="text-lg font-bold text-gray-900 mb-2">Browse Courses</h4>
+              <p className="text-sm text-gray-600">Discover and enroll in new courses</p>
+            </a>
+          </div>
         </div>
       </main>
     </div>
