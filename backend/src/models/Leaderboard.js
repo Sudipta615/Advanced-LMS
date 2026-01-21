@@ -1,7 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const User = require('./User');
-const Course = require('./Course');
 
 const Leaderboard = sequelize.define('Leaderboard', {
   id: {
@@ -61,11 +59,5 @@ const Leaderboard = sequelize.define('Leaderboard', {
     { fields: ['user_id', 'course_id', 'ranking_period'], unique: true }
   ]
 });
-
-// Associations
-Leaderboard.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-Leaderboard.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
-
-// Reverse associations defined in User and Course models
 
 module.exports = Leaderboard;

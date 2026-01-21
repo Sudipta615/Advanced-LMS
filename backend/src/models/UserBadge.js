@@ -1,7 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const User = require('./User');
-const Badge = require('./Badge');
 
 const UserBadge = sequelize.define('UserBadge', {
   id: {
@@ -47,11 +45,5 @@ const UserBadge = sequelize.define('UserBadge', {
     { fields: ['user_id', 'badge_id'], unique: true }
   ]
 });
-
-// Associations
-UserBadge.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-UserBadge.belongsTo(Badge, { foreignKey: 'badge_id', as: 'badge' });
-
-// Reverse associations defined in User and Badge models
 
 module.exports = UserBadge;

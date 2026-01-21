@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const User = require('./User');
 
 const LearningStreak = sequelize.define('LearningStreak', {
   id: {
@@ -43,10 +42,5 @@ const LearningStreak = sequelize.define('LearningStreak', {
     { fields: ['current_streak_days'] }
   ]
 });
-
-// Associations
-LearningStreak.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-
-// Reverse association defined in User model
 
 module.exports = LearningStreak;
