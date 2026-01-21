@@ -1,90 +1,20 @@
-# API Documentation - Advanced LMS
+# Advanced LMS API Documentation
 
-Base URL: `http://localhost:3001`
+## Phase 1: Authentication API
 
-## Table of Contents
-
-- [Authentication](#authentication)
-- [Error Handling](#error-handling)
-- [Rate Limiting](#rate-limiting)
-- [Endpoints](#endpoints)
-
-## Authentication
-
-Most endpoints require authentication via JWT tokens. Include the token in the Authorization header:
-
-```
-Authorization: Bearer <your_access_token>
-```
-
-### Token Types
-
-- **Access Token**: Short-lived (15 minutes), used for API requests
-- **Refresh Token**: Long-lived (7 days), used to obtain new access tokens
-
-## Error Handling
-
-All error responses follow this format:
-
-```json
-{
-  "success": false,
-  "message": "Error message here",
-  "errors": ["Detailed error 1", "Detailed error 2"]
-}
-```
-
-### HTTP Status Codes
-
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request (validation error)
-- `401` - Unauthorized (invalid/missing token)
-- `403` - Forbidden (insufficient permissions)
-- `404` - Not Found
-- `409` - Conflict (duplicate resource)
-- `429` - Too Many Requests (rate limit exceeded)
-- `500` - Internal Server Error
-
-## Rate Limiting
-
-| Endpoint | Limit | Window |
-|----------|-------|--------|
-| `/api/auth/register` | 5 requests | 15 minutes |
-| `/api/auth/login` | 5 requests | 5 minutes |
-| `/api/auth/forgot-password` | 3 requests | 15 minutes |
-| All other endpoints | 100 requests | 15 minutes |
-
-## Endpoints
-
-### Health Check
-
-#### GET /health
-
-Check if the server is running.
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Server is healthy",
-  "timestamp": "2024-01-20T10:00:00.000Z"
-}
-```
-
----
+### Base URL
+`http://localhost:3001/api`
 
 ### Authentication Endpoints
 
-#### POST /api/auth/register
-
-Register a new user account.
+#### POST /auth/register
+Register a new user
 
 **Request Body:**
 ```json
 {
   "email": "user@example.com",
-  "username": "johndoe",
+  "username": "username",
   "password": "Password123!",
   "confirmPassword": "Password123!",
   "firstName": "John",
@@ -92,73 +22,34 @@ Register a new user account.
 }
 ```
 
-**Validation Rules:**
-- `email`: Valid email format, unique
-- `username`: 3-30 alphanumeric characters, unique
-- `password`: Minimum 8 characters, must contain uppercase, lowercase, number, and special character
-- `confirmPassword`: Must match password
-- `firstName`, `lastName`: 2-50 characters
-
-**Success Response (201):**
+**Response:**
 ```json
 {
   "success": true,
-  "message": "Registration successful. Please check your email to verify your account.",
-  "data": {
-    "user": {
-      "id": "uuid-here",
-      "email": "user@example.com",
-      "username": "johndoe",
-      "firstName": "John",
-      "lastName": "Doe"
-    }
-  }
+  "message": "Registration successful. Please check your email for verification."
 }
 ```
 
-**Error Response (400):**
-```json
-{
-  "success": false,
-  "message": "Validation error",
-  "errors": ["Email already registered"]
-}
-```
-
----
-
-#### POST /api/auth/verify-email
-
-Verify email address using the token sent via email.
+#### POST /auth/verify-email
+Verify user email
 
 **Request Body:**
 ```json
 {
-  "token": "verification-token-here"
+  "token": "verification-token"
 }
 ```
 
-**Success Response (200):**
+**Response:**
 ```json
 {
   "success": true,
-  "message": "Email verified successfully"
+  "message": "Email verified successfully."
 }
 ```
 
-**Error Response (400):**
-```json
-{
-  "success": false,
-  "message": "Invalid verification token"
-}
-```
-
----
-
-#### POST /api/auth/login
-
-Authenticate user and receive tokens.
+#### POST /auth/login
+User login
 
 **Request Body:**
 ```json
@@ -168,79 +59,39 @@ Authenticate user and receive tokens.
 }
 ```
 
-**Success Response (200):**
+**Response:**
 ```json
 {
   "success": true,
-  "message": "Login successful",
   "data": {
+    "accessToken": "jwt-access-token",
+    "refreshToken": "jwt-refresh-token",
     "user": {
-      "id": "uuid-here",
+      "id": "user-id",
       "email": "user@example.com",
-      "username": "johndoe",
+      "username": "username",
       "firstName": "John",
       "lastName": "Doe",
-      "role": "student",
-      "permissions": [
-        "course:view",
-        "course:enroll",
-        "lesson:view",
-        "assignment:submit",
-        "quiz:take",
-        "profile:view",
-        "profile:edit"
-      ]
-    },
-    "accessToken": "jwt-access-token",
-    "refreshToken": "jwt-refresh-token"
+      "role": "student"
+    }
   }
 }
 ```
 
-**Error Responses:**
-
-*Invalid credentials (400):*
-```json
-{
-  "success": false,
-  "message": "Invalid email or password"
-}
-```
-
-*Email not verified (400):*
-```json
-{
-  "success": false,
-  "message": "Please verify your email before logging in"
-}
-```
-
-*Account inactive (400):*
-```json
-{
-  "success": false,
-  "message": "Account is inactive. Please contact support."
-}
-```
-
----
-
-#### POST /api/auth/refresh-token
-
-Obtain a new access token using a refresh token.
+#### POST /auth/refresh-token
+Refresh access token
 
 **Request Body:**
 ```json
 {
-  "refreshToken": "your-refresh-token"
+  "refreshToken": "jwt-refresh-token"
 }
 ```
 
-**Success Response (200):**
+**Response:**
 ```json
 {
   "success": true,
-  "message": "Token refreshed successfully",
   "data": {
     "accessToken": "new-jwt-access-token",
     "refreshToken": "new-jwt-refresh-token"
@@ -248,40 +99,24 @@ Obtain a new access token using a refresh token.
 }
 ```
 
-**Error Response (401):**
-```json
-{
-  "success": false,
-  "message": "Invalid refresh token"
-}
-```
-
----
-
-#### POST /api/auth/logout
-
-**Protected Route** - Requires authentication
-
-Logout user and blacklist current token.
+#### POST /auth/logout
+Logout and blacklist token
 
 **Headers:**
 ```
-Authorization: Bearer <access_token>
+Authorization: Bearer jwt-access-token
 ```
 
-**Success Response (200):**
+**Response:**
 ```json
 {
   "success": true,
-  "message": "Logged out successfully"
+  "message": "Logged out successfully."
 }
 ```
 
----
-
-#### POST /api/auth/forgot-password
-
-Request a password reset link.
+#### POST /auth/forgot-password
+Request password reset
 
 **Request Body:**
 ```json
@@ -290,296 +125,940 @@ Request a password reset link.
 }
 ```
 
-**Success Response (200):**
+**Response:**
 ```json
 {
   "success": true,
-  "message": "If the email exists, a password reset link has been sent"
+  "message": "Password reset email sent."
 }
 ```
 
-**Note:** This endpoint always returns success to prevent email enumeration attacks.
-
----
-
-#### POST /api/auth/reset-password
-
-Reset password using the token from email.
+#### POST /auth/reset-password
+Reset password
 
 **Request Body:**
 ```json
 {
-  "token": "reset-token-from-email",
+  "token": "reset-token",
   "password": "NewPassword123!",
   "confirmPassword": "NewPassword123!"
 }
 ```
 
-**Success Response (200):**
+**Response:**
 ```json
 {
   "success": true,
-  "message": "Password reset successfully"
+  "message": "Password reset successfully."
 }
 ```
 
-**Error Responses:**
-
-*Invalid/expired token (400):*
-```json
-{
-  "success": false,
-  "message": "Invalid or expired reset token"
-}
-```
-
-*Token already used (400):*
-```json
-{
-  "success": false,
-  "message": "Reset token has already been used"
-}
-```
-
----
-
-#### GET /api/auth/me
-
-**Protected Route** - Requires authentication
-
-Get current authenticated user's profile.
+#### GET /auth/me
+Get current user
 
 **Headers:**
 ```
-Authorization: Bearer <access_token>
+Authorization: Bearer jwt-access-token
 ```
 
-**Success Response (200):**
+**Response:**
 ```json
 {
   "success": true,
   "data": {
-    "user": {
-      "id": "uuid-here",
-      "email": "user@example.com",
-      "username": "johndoe",
-      "firstName": "John",
-      "lastName": "Doe",
-      "profilePictureUrl": null,
-      "bio": null,
-      "role": "student",
-      "permissions": [
-        "course:view",
-        "course:enroll",
-        "lesson:view",
-        "assignment:submit",
-        "quiz:take",
-        "profile:view",
-        "profile:edit"
-      ],
-      "isEmailVerified": true,
-      "lastLogin": "2024-01-20T10:00:00.000Z",
-      "createdAt": "2024-01-15T08:00:00.000Z"
+    "id": "user-id",
+    "email": "user@example.com",
+    "username": "username",
+    "firstName": "John",
+    "lastName": "Doe",
+    "role": "student",
+    "isEmailVerified": true
+  }
+}
+```
+
+## Phase 2: Course Management API
+
+### Course Endpoints
+
+#### GET /courses
+Get all courses with pagination and filtering
+
+**Query Parameters:**
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 10)
+- `search`: Search term for course title
+- `category`: Category slug
+- `difficulty`: Difficulty level (beginner, intermediate, advanced)
+- `tags`: Comma-separated list of tags
+- `status`: Course status (admin only: draft, published, archived)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token (optional)
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "course-id",
+      "title": "Course Title",
+      "slug": "course-title",
+      "description": "Course description",
+      "thumbnail_url": "https://example.com/image.jpg",
+      "instructor": {
+        "first_name": "John",
+        "last_name": "Doe"
+      },
+      "difficulty_level": "beginner",
+      "price": 0.00,
+      "estimated_hours": 10.5,
+      "category": {
+        "name": "Technology",
+        "slug": "technology"
+      },
+      "isEnrolled": false,
+      "completionPercentage": 0,
+      "enrollmentStatus": null
+    }
+  ],
+  "pagination": {
+    "total": 100,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 10
+  }
+}
+```
+
+#### GET /courses/:id
+Get course by ID
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token (optional)
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "course-id",
+    "title": "Course Title",
+    "slug": "course-title",
+    "description": "Course description",
+    "content": "Detailed course content",
+    "thumbnail_url": "https://example.com/image.jpg",
+    "instructor": {
+      "id": "instructor-id",
+      "first_name": "John",
+      "last_name": "Doe",
+      "profile_picture_url": "https://example.com/avatar.jpg"
+    },
+    "category": {
+      "name": "Technology",
+      "slug": "technology"
+    },
+    "difficulty_level": "beginner",
+    "estimated_hours": 10.5,
+    "price": 0.00,
+    "language": "en",
+    "status": "published",
+    "is_featured": false,
+    "tags": ["javascript", "programming"],
+    "prerequisites": [
+      {
+        "course_id": "prerequisite-course-id",
+        "title": "Prerequisite Course",
+        "slug": "prerequisite-course",
+        "min_completion_percentage": 100
+      }
+    ],
+    "sections": [
+      {
+        "id": "section-id",
+        "title": "Section Title",
+        "description": "Section description",
+        "display_order": 1,
+        "lessons": [
+          {
+            "id": "lesson-id",
+            "title": "Lesson Title",
+            "description": "Lesson description",
+            "lesson_type": "text",
+            "duration_minutes": 30,
+            "is_published": true
+          }
+        ]
+      }
+    ],
+    "isEnrolled": false,
+    "enrollmentStatus": null,
+    "completionPercentage": 0
+  }
+}
+```
+
+#### POST /courses
+Create a new course (Instructor/Admin only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "Course Title",
+  "description": "Course description",
+  "category_id": "category-id",
+  "difficulty_level": "beginner",
+  "estimated_hours": 10.5,
+  "price": 0.00,
+  "tags": ["javascript", "programming"],
+  "prerequisites": ["prerequisite-course-id"],
+  "status": "draft"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "course-id",
+    "title": "Course Title",
+    "slug": "course-title",
+    "description": "Course description",
+    "category_id": "category-id",
+    "instructor_id": "instructor-id",
+    "status": "draft",
+    "created_at": "2024-01-21T00:00:00.000Z",
+    "updated_at": "2024-01-21T00:00:00.000Z"
+  }
+}
+```
+
+#### PUT /courses/:id
+Update a course (Instructor/Admin or course creator only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "Updated Course Title",
+  "description": "Updated course description",
+  "category_id": "category-id",
+  "difficulty_level": "intermediate",
+  "estimated_hours": 15.0,
+  "price": 29.99,
+  "tags": ["javascript", "advanced"],
+  "prerequisites": ["prerequisite-course-id"],
+  "status": "published"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "course-id",
+    "title": "Updated Course Title",
+    "slug": "updated-course-title",
+    "description": "Updated course description",
+    "category_id": "category-id",
+    "instructor_id": "instructor-id",
+    "status": "published",
+    "created_at": "2024-01-21T00:00:00.000Z",
+    "updated_at": "2024-01-21T00:00:00.000Z"
+  }
+}
+```
+
+#### DELETE /courses/:id
+Delete a course (Admin or course creator only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Course deleted successfully"
+}
+```
+
+### Section Endpoints
+
+#### GET /courses/:id/sections
+Get all sections for a course
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token (optional)
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "section-id",
+      "course_id": "course-id",
+      "title": "Section Title",
+      "description": "Section description",
+      "display_order": 1,
+      "lessons": [
+        {
+          "id": "lesson-id",
+          "title": "Lesson Title",
+          "description": "Lesson description",
+          "lesson_type": "text",
+          "duration_minutes": 30,
+          "is_published": true,
+          "isCompleted": false,
+          "completed_at": null
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### POST /courses/:id/sections
+Create a new section (Instructor/Admin or course creator only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "Section Title",
+  "description": "Section description",
+  "display_order": 1
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "section-id",
+    "course_id": "course-id",
+    "title": "Section Title",
+    "description": "Section description",
+    "display_order": 1,
+    "created_at": "2024-01-21T00:00:00.000Z",
+    "updated_at": "2024-01-21T00:00:00.000Z"
+  }
+}
+```
+
+#### PUT /courses/:id/sections/:sectionId
+Update a section (Instructor/Admin or course creator only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "Updated Section Title",
+  "description": "Updated section description",
+  "display_order": 2
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "section-id",
+    "course_id": "course-id",
+    "title": "Updated Section Title",
+    "description": "Updated section description",
+    "display_order": 2,
+    "created_at": "2024-01-21T00:00:00.000Z",
+    "updated_at": "2024-01-21T00:00:00.000Z"
+  }
+}
+```
+
+#### DELETE /courses/:id/sections/:sectionId
+Delete a section (Instructor/Admin or course creator only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Section deleted successfully"
+}
+```
+
+### Lesson Endpoints
+
+#### GET /lessons/:id
+Get lesson by ID
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token (optional)
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "lesson-id",
+    "title": "Lesson Title",
+    "description": "Lesson description",
+    "content": "Lesson content",
+    "lesson_type": "text",
+    "video_url": null,
+    "video_provider": null,
+    "self_hosted_video_path": null,
+    "document_paths": [],
+    "external_links": [],
+    "markdown_content": "# Lesson Content\n\nThis is the lesson content in markdown format.",
+    "duration_minutes": 30,
+    "is_published": true,
+    "requires_completion": true,
+    "isCompleted": false,
+    "completed_at": null
+  }
+}
+```
+
+#### POST /courses/:id/sections/:sectionId/lessons
+Create a new lesson (Instructor/Admin or course creator only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "Lesson Title",
+  "description": "Lesson description",
+  "content": "Lesson content",
+  "lesson_type": "text",
+  "markdown_content": "# Lesson Content\n\nThis is the lesson content in markdown format.",
+  "duration_minutes": 30,
+  "is_published": true,
+  "requires_completion": true
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "lesson-id",
+    "section_id": "section-id",
+    "title": "Lesson Title",
+    "description": "Lesson description",
+    "content": "Lesson content",
+    "lesson_type": "text",
+    "markdown_content": "# Lesson Content\n\nThis is the lesson content in markdown format.",
+    "duration_minutes": 30,
+    "is_published": true,
+    "requires_completion": true,
+    "created_at": "2024-01-21T00:00:00.000Z",
+    "updated_at": "2024-01-21T00:00:00.000Z"
+  }
+}
+```
+
+#### PUT /lessons/:id
+Update a lesson (Instructor/Admin or course creator only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "Updated Lesson Title",
+  "description": "Updated lesson description",
+  "content": "Updated lesson content",
+  "lesson_type": "text",
+  "markdown_content": "# Updated Lesson Content\n\nThis is the updated lesson content in markdown format.",
+  "duration_minutes": 45,
+  "is_published": true,
+  "requires_completion": true
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "lesson-id",
+    "section_id": "section-id",
+    "title": "Updated Lesson Title",
+    "description": "Updated lesson description",
+    "content": "Updated lesson content",
+    "lesson_type": "text",
+    "markdown_content": "# Updated Lesson Content\n\nThis is the updated lesson content in markdown format.",
+    "duration_minutes": 45,
+    "is_published": true,
+    "requires_completion": true,
+    "created_at": "2024-01-21T00:00:00.000Z",
+    "updated_at": "2024-01-21T00:00:00.000Z"
+  }
+}
+```
+
+#### DELETE /lessons/:id
+Delete a lesson (Instructor/Admin or course creator only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Lesson deleted successfully"
+}
+```
+
+### Enrollment Endpoints
+
+#### POST /enrollments
+Enroll in a course (Authenticated student only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "course_id": "course-id"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "enrollment-id",
+    "user_id": "user-id",
+    "course_id": "course-id",
+    "enrolled_at": "2024-01-21T00:00:00.000Z",
+    "completion_percentage": 0,
+    "status": "active",
+    "created_at": "2024-01-21T00:00:00.000Z",
+    "updated_at": "2024-01-21T00:00:00.000Z"
+  }
+}
+```
+
+#### GET /enrollments
+Get user's enrollments (Authenticated user only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+```
+
+**Query Parameters:**
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 10)
+- `status`: Filter by status (active, completed, dropped)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "enrollment-id",
+      "user_id": "user-id",
+      "course_id": "course-id",
+      "enrolled_at": "2024-01-21T00:00:00.000Z",
+      "completion_percentage": 50,
+      "status": "active",
+      "last_accessed_at": "2024-01-21T00:00:00.000Z",
+      "course": {
+        "id": "course-id",
+        "title": "Course Title",
+        "slug": "course-title",
+        "description": "Course description",
+        "thumbnail_url": "https://example.com/image.jpg",
+        "difficulty_level": "beginner",
+        "estimated_hours": 10.5,
+        "instructor": {
+          "first_name": "John",
+          "last_name": "Doe"
+        },
+        "category": {
+          "name": "Technology"
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "total": 10,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 1
+  }
+}
+```
+
+#### GET /enrollments/:id
+Get enrollment by ID (Authenticated user only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "enrollment-id",
+    "user_id": "user-id",
+    "course_id": "course-id",
+    "enrolled_at": "2024-01-21T00:00:00.000Z",
+    "completion_percentage": 50,
+    "status": "active",
+    "last_accessed_at": "2024-01-21T00:00:00.000Z",
+    "course": {
+      "id": "course-id",
+      "title": "Course Title",
+      "slug": "course-title",
+      "description": "Course description",
+      "thumbnail_url": "https://example.com/image.jpg",
+      "difficulty_level": "beginner",
+      "estimated_hours": 10.5,
+      "instructor": {
+        "first_name": "John",
+        "last_name": "Doe"
+      },
+      "category": {
+        "name": "Technology"
+      },
+      "sections": [
+        {
+          "id": "section-id",
+          "title": "Section Title",
+          "description": "Section description",
+          "display_order": 1,
+          "lessons": [
+            {
+              "id": "lesson-id",
+              "title": "Lesson Title",
+              "description": "Lesson description",
+              "lesson_type": "text",
+              "duration_minutes": 30,
+              "is_published": true,
+              "isCompleted": true,
+              "completed_at": "2024-01-21T00:00:00.000Z",
+              "time_spent_minutes": 30,
+              "notes": "Lesson notes"
+            }
+          ]
+        }
+      ]
     }
   }
 }
 ```
 
-**Error Response (401):**
+#### PUT /enrollments/:id
+Update enrollment (Authenticated user only)
+
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+Content-Type: application/json
+```
+
+**Request Body:**
 ```json
 {
-  "success": false,
-  "message": "Invalid or expired token"
+  "last_accessed_at": "2024-01-21T00:00:00.000Z"
 }
 ```
 
----
-
-## Example Usage
-
-### cURL Examples
-
-**Register:**
-```bash
-curl -X POST http://localhost:3001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "username": "johndoe",
-    "password": "Password123!",
-    "confirmPassword": "Password123!",
-    "firstName": "John",
-    "lastName": "Doe"
-  }'
-```
-
-**Login:**
-```bash
-curl -X POST http://localhost:3001/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "Password123!"
-  }'
-```
-
-**Get Current User:**
-```bash
-curl -X GET http://localhost:3001/api/auth/me \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
-### JavaScript/Axios Examples
-
-**Register:**
-```javascript
-const response = await axios.post('http://localhost:3001/api/auth/register', {
-  email: 'user@example.com',
-  username: 'johndoe',
-  password: 'Password123!',
-  confirmPassword: 'Password123!',
-  firstName: 'John',
-  lastName: 'Doe'
-});
-```
-
-**Login:**
-```javascript
-const response = await axios.post('http://localhost:3001/api/auth/login', {
-  email: 'user@example.com',
-  password: 'Password123!'
-});
-
-const { accessToken, refreshToken, user } = response.data.data;
-```
-
-**Authenticated Request:**
-```javascript
-const response = await axios.get('http://localhost:3001/api/auth/me', {
-  headers: {
-    Authorization: `Bearer ${accessToken}`
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "enrollment-id",
+    "user_id": "user-id",
+    "course_id": "course-id",
+    "enrolled_at": "2024-01-21T00:00:00.000Z",
+    "completion_percentage": 50,
+    "status": "active",
+    "last_accessed_at": "2024-01-21T00:00:00.000Z",
+    "created_at": "2024-01-21T00:00:00.000Z",
+    "updated_at": "2024-01-21T00:00:00.000Z"
   }
-});
+}
 ```
 
-**Refresh Token:**
-```javascript
-const response = await axios.post('http://localhost:3001/api/auth/refresh-token', {
-  refreshToken: refreshToken
-});
+#### DELETE /enrollments/:id
+Unenroll from a course (Authenticated user only)
 
-const { accessToken: newAccessToken } = response.data.data;
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
 ```
 
-## Permissions System
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Successfully unenrolled from the course"
+}
+```
 
-### Available Permissions
+### Progress & Completion Endpoints
 
-**Course Permissions:**
-- `course:view` - View courses
-- `course:create` - Create courses
-- `course:edit` - Edit courses
-- `course:delete` - Delete courses
-- `course:enroll` - Enroll in courses
+#### POST /lessons/:id/complete
+Mark lesson as complete (Authenticated student only)
 
-**Lesson Permissions:**
-- `lesson:view` - View lessons
-- `lesson:create` - Create lessons
-- `lesson:edit` - Edit lessons
-- `lesson:delete` - Delete lessons
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+Content-Type: application/json
+```
 
-**Assignment Permissions:**
-- `assignment:view` - View assignments
-- `assignment:create` - Create assignments
-- `assignment:edit` - Edit assignments
-- `assignment:delete` - Delete assignments
-- `assignment:submit` - Submit assignments
-- `assignment:grade` - Grade assignments
+**Request Body:**
+```json
+{
+  "time_spent_minutes": 30,
+  "notes": "Lesson notes"
+}
+```
 
-**Quiz Permissions:**
-- `quiz:view` - View quizzes
-- `quiz:create` - Create quizzes
-- `quiz:edit` - Edit quizzes
-- `quiz:delete` - Delete quizzes
-- `quiz:take` - Take quizzes
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "lessonCompletion": {
+      "id": "lesson-completion-id",
+      "user_id": "user-id",
+      "lesson_id": "lesson-id",
+      "enrollment_id": "enrollment-id",
+      "completed_at": "2024-01-21T00:00:00.000Z",
+      "time_spent_minutes": 30,
+      "notes": "Lesson notes"
+    },
+    "enrollment": {
+      "completion_percentage": 50,
+      "status": "active"
+    }
+  }
+}
+```
 
-**User Permissions:**
-- `user:view` - View users
-- `user:create` - Create users
-- `user:edit` - Edit users
-- `user:delete` - Delete users
+#### GET /courses/:id/progress
+Get course progress (Authenticated student or instructor only)
 
-**System Permissions:**
-- `profile:view` - View own profile
-- `profile:edit` - Edit own profile
-- `student:view` - View students
-- `role:manage` - Manage roles
-- `audit:view` - View audit logs
-- `system:manage` - System management
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+```
 
-### Role-Permission Mapping
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "course_id": "course-id",
+    "course_title": "Course Title",
+    "completion_percentage": 50,
+    "completed_lessons": 5,
+    "total_lessons": 10,
+    "estimated_time_remaining_minutes": 150,
+    "sections": [
+      {
+        "section_id": "section-id",
+        "title": "Section Title",
+        "completion_percentage": 50,
+        "completed_lessons": 2,
+        "total_lessons": 4
+      }
+    ],
+    "enrollment_status": "active",
+    "enrolled_at": "2024-01-21T00:00:00.000Z"
+  }
+}
+```
 
-**Student Role:**
-- course:view, course:enroll
-- lesson:view
-- assignment:submit
-- quiz:take
-- profile:view, profile:edit
+#### GET /enrollments/:id/progress
+Get enrollment progress details (Authenticated student only)
 
-**Instructor Role:**
-- All student permissions
-- course:create, course:edit, course:delete
-- lesson:create, lesson:edit, lesson:delete
-- assignment:view, assignment:create, assignment:edit, assignment:grade
-- quiz:create, quiz:edit
-- student:view
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+```
 
-**Admin Role:**
-- All instructor permissions
-- user:view, user:create, user:edit, user:delete
-- assignment:delete, quiz:delete
-- role:manage
-- audit:view
-- system:manage
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "enrollment_id": "enrollment-id",
+    "course_id": "course-id",
+    "course_title": "Course Title",
+    "completion_percentage": 50,
+    "status": "active",
+    "enrolled_at": "2024-01-21T00:00:00.000Z",
+    "last_accessed_at": "2024-01-21T00:00:00.000Z",
+    "lessons": [
+      {
+        "lesson_id": "lesson-id",
+        "lesson_title": "Lesson Title",
+        "section_id": "section-id",
+        "section_title": "Section Title",
+        "is_completed": true,
+        "completed_at": "2024-01-21T00:00:00.000Z",
+        "time_spent_minutes": 30,
+        "notes": "Lesson notes",
+        "lesson_type": "text",
+        "display_order": 1
+      }
+    ]
+  }
+}
+```
 
-## Audit Logging
+#### GET /courses/:id/analytics
+Get course analytics (Instructor/Admin or course creator only)
 
-All authentication actions are automatically logged to the `audit_logs` table:
+**Headers:**
+```
+Authorization: Bearer jwt-access-token
+```
 
-- User registration
-- User login
-- Password reset
-- User logout
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "course_id": "course-id",
+    "course_title": "Course Title",
+    "total_enrollments": 100,
+    "completed_enrollments": 45,
+    "active_enrollments": 50,
+    "dropped_enrollments": 5,
+    "completion_rate": 45,
+    "average_completion_percentage": 65,
+    "recent_enrollments": 15,
+    "enrollment_trend": {
+      "last_30_days": 15
+    }
+  }
+}
+```
 
-Each log entry includes:
-- User ID
-- Action performed
-- Resource type and ID
-- IP address
-- User agent
-- Timestamp
+## Error Handling
 
-Admins can view audit logs for security and compliance purposes.
+The API uses standard HTTP status codes and returns error responses in the following format:
 
-## Best Practices
+```json
+{
+  "success": false,
+  "message": "Error message"
+}
+```
 
-1. **Store tokens securely** - Use httpOnly cookies or secure storage
-2. **Refresh tokens proactively** - Refresh before expiry
-3. **Handle 401 errors** - Implement automatic token refresh
-4. **Logout properly** - Always call logout endpoint
-5. **Validate input** - Client-side validation for better UX
-6. **Handle rate limits** - Implement exponential backoff
-7. **Never expose tokens** - Don't log or expose tokens in URLs
+Common error status codes:
+- `400 Bad Request`: Invalid input data
+- `401 Unauthorized`: Authentication required or failed
+- `403 Forbidden`: Access denied due to insufficient permissions
+- `404 Not Found`: Resource not found
+- `409 Conflict`: Resource already exists or conflict
+- `413 Payload Too Large`: File size exceeds limit
+- `500 Internal Server Error`: Server error
 
-## Coming Soon (Phase 2+)
+## Rate Limiting
 
-- Course management endpoints
-- Lesson CRUD operations
-- Assignment and quiz management
-- Enrollment system
-- Progress tracking
-- Certificate generation
+The API implements rate limiting on certain endpoints:
+- Authentication endpoints: 5 requests per minute per IP
+- Course enrollment: 10 requests per minute per user
+- General API: 100 requests per minute per IP
 
----
+When rate limited, the API returns:
+```json
+{
+  "success": false,
+  "message": "Too many requests, please try again later."
+}
+```
 
-For implementation details, see the source code in `/backend/src/routes/authRoutes.js`
+## Authentication
+
+Most endpoints require JWT authentication. Include the access token in the Authorization header:
+```
+Authorization: Bearer your-jwt-access-token
+```
+
+Use the refresh token endpoint to get new access tokens when they expire.
+
+## Pagination
+
+List endpoints support pagination with `page` and `limit` query parameters. The response includes pagination metadata in the `pagination` object.
+
+## File Uploads
+
+File upload endpoints support:
+- Documents: PDF, DOC, DOCX, PPT, PPTX, ZIP (max 100MB)
+- Videos: MP4, WebM, OGG (max 500MB)
+- Thumbnails: JPG, PNG, WebP (max 10MB)
+
+Use multipart/form-data for file uploads.

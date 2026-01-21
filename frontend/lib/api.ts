@@ -64,4 +64,90 @@ api.interceptors.response.use(
   }
 );
 
+// Course API methods
+export const getCourses = (params: any = {}) => {
+  return api.get('/api/courses', { params });
+};
+
+export const getCourseById = (id: string) => {
+  return api.get(`/api/courses/${id}`);
+};
+
+export const createCourse = (data: any) => {
+  return api.post('/api/courses', data);
+};
+
+export const updateCourse = (id: string, data: any) => {
+  return api.put(`/api/courses/${id}`, data);
+};
+
+export const deleteCourse = (id: string) => {
+  return api.delete(`/api/courses/${id}`);
+};
+
+export const getCourseSections = (courseId: string) => {
+  return api.get(`/api/courses/${courseId}/sections`);
+};
+
+export const createSection = (courseId: string, data: any) => {
+  return api.post(`/api/courses/${courseId}/sections`, data);
+};
+
+export const updateSection = (courseId: string, sectionId: string, data: any) => {
+  return api.put(`/api/courses/${courseId}/sections/${sectionId}`, data);
+};
+
+export const deleteSection = (courseId: string, sectionId: string) => {
+  return api.delete(`/api/courses/${courseId}/sections/${sectionId}`);
+};
+
+export const getLesson = (lessonId: string) => {
+  return api.get(`/api/lessons/${lessonId}`);
+};
+
+export const createLesson = (courseId: string, sectionId: string, data: any) => {
+  return api.post(`/api/courses/${courseId}/sections/${sectionId}/lessons`, data);
+};
+
+export const updateLesson = (lessonId: string, data: any) => {
+  return api.put(`/api/lessons/${lessonId}`, data);
+};
+
+export const deleteLesson = (lessonId: string) => {
+  return api.delete(`/api/lessons/${lessonId}`);
+};
+
+// Enrollment API methods
+export const enrollCourse = (courseId: string) => {
+  return api.post('/api/enrollments', { course_id: courseId });
+};
+
+export const getMyEnrollments = (params: any = {}) => {
+  return api.get('/api/enrollments', { params });
+};
+
+export const getEnrollment = (enrollmentId: string) => {
+  return api.get(`/api/enrollments/${enrollmentId}`);
+};
+
+export const unenrollCourse = (enrollmentId: string) => {
+  return api.delete(`/api/enrollments/${enrollmentId}`);
+};
+
+export const getCourseProgress = (courseId: string) => {
+  return api.get(`/api/courses/${courseId}/progress`);
+};
+
+export const getEnrollmentProgress = (enrollmentId: string) => {
+  return api.get(`/api/enrollments/${enrollmentId}/progress`);
+};
+
+export const completeLesson = (lessonId: string, data: any = {}) => {
+  return api.post(`/api/lessons/${lessonId}/complete`, data);
+};
+
+export const getCourseAnalytics = (courseId: string) => {
+  return api.get(`/api/courses/${courseId}/analytics`);
+};
+
 export default api;

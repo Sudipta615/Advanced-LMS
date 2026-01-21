@@ -1,424 +1,453 @@
-# Database Schema - Advanced LMS
+# Advanced LMS Database Schema
 
-## Overview
+## Phase 1: Authentication Schema
 
-The database schema is designed for a comprehensive Learning Management System with support for authentication, authorization, and audit trails. The schema uses UUID primary keys for security and PostgreSQL-specific features for optimal performance.
+### Users Table
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) NOT NULL UNIQUE,
+  username VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  first_name VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) NOT NULL,
+  profile_picture_url VARCHAR(255),
+  bio TEXT,
+  role_id UUID NOT NULL REFERENCES roles(id),
+  is_email_verified BOOLEAN DEFAULT false,
+  email_verification_token VARCHAR(255),
+  is_active BOOLEAN DEFAULT true,
+  last_login TIMESTAMP,
+  deleted_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+INDEXES: email, username, role_id
+```
+
+### Roles Table
+```sql
+CREATE TABLE roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(50) NOT NULL UNIQUE,
+  permissions JSONB NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+```
+
+### Password Reset Tokens Table
+```sql
+CREATE TABLE password_reset_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  token VARCHAR(255) NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  used_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+```
+
+### Audit Logs Table
+```sql
+CREATE TABLE audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id),
+  action VARCHAR(100) NOT NULL,
+  resource_type VARCHAR(100) NOT NULL,
+  resource_id UUID,
+  changes JSONB,
+  ip_address VARCHAR(45),
+  user_agent TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+```
+
+## Phase 2: Course Management Schema
+
+### Categories Table
+```sql
+CREATE TABLE categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL UNIQUE,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  description TEXT,
+  icon_url VARCHAR(255),
+  display_order INTEGER DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+INDEXES: name, slug, display_order
+```
+
+### Courses Table
+```sql
+CREATE TABLE courses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  description TEXT NOT NULL,
+  content TEXT,
+  thumbnail_url VARCHAR(255),
+  instructor_id UUID NOT NULL REFERENCES users(id),
+  category_id UUID NOT NULL REFERENCES categories(id),
+  status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+  visibility VARCHAR(20) DEFAULT 'public' CHECK (visibility IN ('public', 'private', 'restricted')),
+  is_featured BOOLEAN DEFAULT false,
+  difficulty_level VARCHAR(20) DEFAULT 'beginner' CHECK (difficulty_level IN ('beginner', 'intermediate', 'advanced')),
+  language VARCHAR(10) DEFAULT 'en',
+  price DECIMAL(10, 2) DEFAULT 0.00,
+  prerequisites JSONB DEFAULT '[]',
+  required_score INTEGER DEFAULT 0,
+  allow_retake BOOLEAN DEFAULT true,
+  max_attempts INTEGER,
+  estimated_hours DECIMAL(10, 2),
+  tags JSONB DEFAULT '[]',
+  meta_description VARCHAR(500),
+  meta_keywords VARCHAR(500),
+  created_by UUID NOT NULL REFERENCES users(id),
+  updated_by UUID NOT NULL REFERENCES users(id),
+  published_at TIMESTAMP,
+  deleted_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+INDEXES: title, slug, instructor_id, category_id, status, created_at
+```
+
+### Sections Table
+```sql
+CREATE TABLE sections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  course_id UUID NOT NULL REFERENCES courses(id),
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  display_order INTEGER DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+INDEXES: course_id, display_order
+```
+
+### Lessons Table
+```sql
+CREATE TABLE lessons (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  section_id UUID NOT NULL REFERENCES sections(id),
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  content TEXT,
+  lesson_type VARCHAR(20) DEFAULT 'text' CHECK (lesson_type IN ('video', 'document', 'quiz', 'assignment', 'text')),
+  video_url VARCHAR(500),
+  video_provider VARCHAR(20) CHECK (video_provider IN ('youtube', 'vimeo', 'self_hosted')),
+  self_hosted_video_path VARCHAR(500),
+  document_paths JSONB DEFAULT '[]',
+  external_links JSONB DEFAULT '[]',
+  markdown_content TEXT,
+  display_order INTEGER DEFAULT 0,
+  duration_minutes INTEGER,
+  is_published BOOLEAN DEFAULT false,
+  requires_completion BOOLEAN DEFAULT true,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+INDEXES: section_id, display_order
+```
+
+### Enrollments Table
+```sql
+CREATE TABLE enrollments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  course_id UUID NOT NULL REFERENCES courses(id),
+  enrolled_at TIMESTAMP DEFAULT NOW(),
+  completion_percentage DECIMAL(5, 2) DEFAULT 0.00,
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'completed', 'dropped')),
+  completed_at TIMESTAMP,
+  certificate_id UUID,
+  last_accessed_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (user_id, course_id)
+);
+
+INDEXES: user_id, course_id, status, created_at
+```
+
+### Lesson Completions Table
+```sql
+CREATE TABLE lesson_completions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  lesson_id UUID NOT NULL REFERENCES lessons(id),
+  enrollment_id UUID NOT NULL REFERENCES enrollments(id),
+  completed_at TIMESTAMP DEFAULT NOW(),
+  time_spent_minutes INTEGER DEFAULT 0,
+  notes TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (user_id, lesson_id, enrollment_id)
+);
+
+INDEXES: user_id, lesson_id, completed_at
+```
+
+### Course Prerequisites Table
+```sql
+CREATE TABLE course_prerequisites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  course_id UUID NOT NULL REFERENCES courses(id),
+  prerequisite_course_id UUID NOT NULL REFERENCES courses(id),
+  min_completion_percentage INTEGER DEFAULT 100,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+INDEXES: course_id, prerequisite_course_id
+```
+
+### Course Tags Table
+```sql
+CREATE TABLE course_tags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  course_id UUID NOT NULL REFERENCES courses(id),
+  tag VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+INDEXES: course_id, tag
+```
 
 ## Entity Relationship Diagram
 
-```
-┌─────────────────┐
-│     roles       │
-│─────────────────│
-│ id (PK)         │◄────────┐
-│ name            │         │
-│ permissions     │         │
-│ created_at      │         │
-└─────────────────┘         │
-                            │
-                            │ (1:N)
-                            │
-┌─────────────────────────┐│
-│        users             ││
-│──────────────────────────││
-│ id (PK)                  ││
-│ email (unique)           ││
-│ username (unique)        ││
-│ password_hash            ││
-│ first_name               ││
-│ last_name                ││
-│ profile_picture_url      ││
-│ bio                      ││
-│ role_id (FK)             │┘
-│ is_email_verified        │
-│ email_verification_token │
-│ is_active                │
-│ last_login               │
-│ created_at               │
-│ updated_at               │
-│ deleted_at               │
-└──────────────────────────┘
-         │                    
-         │                    
-         │ (1:N)              
-         │                    
-         ├──────────────────────────────┐
-         │                              │
-         │                              │
-         ▼                              ▼
-┌──────────────────────────┐  ┌────────────────────┐
-│password_reset_tokens     │  │   audit_logs       │
-│──────────────────────────│  │────────────────────│
-│ id (PK)                  │  │ id (PK)            │
-│ user_id (FK)             │  │ user_id (FK)       │
-│ token (unique)           │  │ action             │
-│ expires_at               │  │ resource_type      │
-│ used_at                  │  │ resource_id        │
-│ created_at               │  │ changes            │
-└──────────────────────────┘  │ ip_address         │
-                               │ user_agent         │
-                               │ created_at         │
-                               └────────────────────┘
+```mermaid
+graph TD
+  %% Users and Roles
+  users[Users] -->|has many| roles[Roles]
+  users -->|has many| password_reset_tokens[Password Reset Tokens]
+  users -->|has many| audit_logs[Audit Logs]
+  
+  %% Course Management
+  users -->|creates| courses[Courses]
+  users -->|instructs| courses
+  courses -->|belongs to| categories[Categories]
+  courses -->|has many| sections[Sections]
+  sections -->|has many| lessons[Lessons]
+  
+  %% Enrollment and Progress
+  users -->|enrolls in| enrollments[Enrollments]
+  courses -->|has many| enrollments
+  enrollments -->|has many| lesson_completions[Lesson Completions]
+  lessons -->|has many| lesson_completions
+  
+  %% Prerequisites and Tags
+  courses -->|has many| course_prerequisites[Course Prerequisites]
+  courses -->|has many| course_tags[Course Tags]
 ```
 
-## Tables
+## Key Relationships
 
-### roles
+### User-Course Relationships
+- **One-to-Many**: A user can create many courses
+- **One-to-Many**: A user can instruct many courses
+- **Many-to-Many**: Users can enroll in many courses through the enrollments table
 
-Defines user roles and their associated permissions.
+### Course Structure
+- **One-to-Many**: A course has many sections
+- **One-to-Many**: A section has many lessons
+- **One-to-Many**: A course belongs to one category
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | UUID | PRIMARY KEY | Unique role identifier |
-| name | ENUM | NOT NULL, UNIQUE | Role name ('student', 'instructor', 'admin') |
-| permissions | JSON | NOT NULL, DEFAULT [] | Array of permission strings |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
+### Progress Tracking
+- **One-to-Many**: An enrollment has many lesson completions
+- **Many-to-One**: Lesson completions belong to one lesson and one enrollment
 
-**Indexes:**
-- Primary key on `id`
-- Unique constraint on `name`
+### Additional Relationships
+- **Many-to-Many**: Courses can have multiple prerequisites through course_prerequisites
+- **One-to-Many**: Courses can have multiple tags through course_tags
 
-**Seeded Data:**
-```sql
--- student role
-{
-  "name": "student",
-  "permissions": [
-    "course:view", "course:enroll",
-    "lesson:view",
-    "assignment:submit",
-    "quiz:take",
-    "profile:view", "profile:edit"
-  ]
-}
+## Data Types and Constraints
 
--- instructor role
-{
-  "name": "instructor",
-  "permissions": [
-    "course:view", "course:create", "course:edit", "course:delete",
-    "lesson:view", "lesson:create", "lesson:edit", "lesson:delete",
-    "assignment:view", "assignment:create", "assignment:edit", "assignment:grade",
-    "quiz:view", "quiz:create", "quiz:edit",
-    "student:view",
-    "profile:view", "profile:edit"
-  ]
-}
+### UUIDs
+All primary keys use UUIDs (Universally Unique Identifiers) for security and distributed system compatibility.
 
--- admin role
-{
-  "name": "admin",
-  "permissions": [
-    "user:view", "user:create", "user:edit", "user:delete",
-    "course:view", "course:create", "course:edit", "course:delete",
-    "lesson:view", "lesson:create", "lesson:edit", "lesson:delete",
-    "assignment:view", "assignment:create", "assignment:edit", "assignment:delete", "assignment:grade",
-    "quiz:view", "quiz:create", "quiz:edit", "quiz:delete",
-    "role:manage",
-    "audit:view",
-    "system:manage"
-  ]
-}
+### Enums
+The schema uses enums for fixed sets of values:
+- Course status: 'draft', 'published', 'archived'
+- Course visibility: 'public', 'private', 'restricted'
+- Difficulty level: 'beginner', 'intermediate', 'advanced'
+- Lesson types: 'video', 'document', 'quiz', 'assignment', 'text'
+- Video providers: 'youtube', 'vimeo', 'self_hosted'
+- Enrollment status: 'active', 'completed', 'dropped'
+
+### JSONB Fields
+JSONB fields are used for flexible data structures:
+- `prerequisites`: Array of course IDs
+- `tags`: Array of strings
+- `document_paths`: Array of file paths
+- `external_links`: Array of objects with title and URL
+- `permissions`: Array of permission strings (in roles table)
+- `changes`: Audit log changes data
+
+### Soft Deletes
+Tables that support soft deletion include a `deleted_at` timestamp:
+- Users
+- Courses
+
+### Timestamps
+All tables include `created_at` and `updated_at` timestamps for tracking record creation and modification.
+
+## Indexing Strategy
+
+### Performance Optimization
+The schema includes strategic indexes for query performance:
+- Foreign key indexes for join operations
+- Frequently queried columns (title, slug, status)
+- Unique constraints for data integrity
+- Composite indexes for common query patterns
+
+### Unique Constraints
+- Email and username uniqueness in users
+- Course slug uniqueness
+- Category name and slug uniqueness
+- User-course enrollment uniqueness
+- User-lesson-enrollment uniqueness in lesson completions
+
+## Database Migration Strategy
+
+### Version Control
+Database migrations are version-controlled and follow a sequential numbering pattern:
+- `YYYYMMDDHHMMSS-description.js` format
+- Sequential execution order
+- Up and down migration functions
+
+### Migration Process
+1. Create new migration files for schema changes
+2. Run migrations in order using Sequelize
+3. Seed initial data for development
+4. Update documentation
+
+### Example Migration
+```javascript
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    await queryInterface.createTable('categories', {
+      id: {
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true
+      },
+      name: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        unique: true
+      },
+      // ... other fields
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        allowNull: false
+      }
+    });
+  },
+
+  down: async (queryInterface, Sequelize) => {
+    await queryInterface.dropTable('categories');
+  }
+};
 ```
 
----
+## Data Validation
 
-### users
+### Backend Validation
+- Sequelize model validation
+- Joi schema validation for API requests
+- Database constraints (NOT NULL, UNIQUE, CHECK)
 
-Stores user account information and profiles.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | UUID | PRIMARY KEY | Unique user identifier |
-| email | VARCHAR(255) | NOT NULL, UNIQUE | User email address |
-| username | VARCHAR(255) | NOT NULL, UNIQUE | Unique username |
-| password_hash | VARCHAR(255) | NOT NULL | Bcrypt hashed password |
-| first_name | VARCHAR(255) | NOT NULL | User's first name |
-| last_name | VARCHAR(255) | NOT NULL | User's last name |
-| profile_picture_url | VARCHAR(255) | NULL | URL to profile picture |
-| bio | TEXT | NULL | User biography |
-| role_id | UUID | NOT NULL, FOREIGN KEY | Reference to roles table |
-| is_email_verified | BOOLEAN | NOT NULL, DEFAULT false | Email verification status |
-| email_verification_token | VARCHAR(255) | NULL | Token for email verification |
-| is_active | BOOLEAN | NOT NULL, DEFAULT true | Account active status |
-| last_login | TIMESTAMP | NULL | Last login timestamp |
-| created_at | TIMESTAMP | NOT NULL | Account creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | NULL | Soft delete timestamp |
-
-**Indexes:**
-- Primary key on `id`
-- Unique constraint on `email`
-- Unique constraint on `username`
-- Index on `role_id` (foreign key)
-- Index on `email` (for lookups)
-- Index on `username` (for lookups)
-
-**Foreign Keys:**
-- `role_id` REFERENCES `roles(id)`
-
-**Constraints:**
-- Email must be valid email format (validated by Sequelize)
-- Password must meet strength requirements (enforced by application)
-
-**Soft Delete:**
-- Uses `deleted_at` for soft deletes (paranoid mode)
-- Deleted records are not returned in normal queries
-- Can be restored if needed
-
----
-
-### password_reset_tokens
-
-Temporary tokens for password reset functionality.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | UUID | PRIMARY KEY | Unique token record identifier |
-| user_id | UUID | NOT NULL, FOREIGN KEY | Reference to users table |
-| token | VARCHAR(255) | NOT NULL, UNIQUE | Reset token (UUID) |
-| expires_at | TIMESTAMP | NOT NULL | Token expiration time (1 hour) |
-| used_at | TIMESTAMP | NULL | When token was used |
-| created_at | TIMESTAMP | NOT NULL | Token creation timestamp |
-
-**Indexes:**
-- Primary key on `id`
-- Unique constraint on `token`
-- Index on `token` (for fast lookups)
-- Index on `user_id` (foreign key)
-
-**Foreign Keys:**
-- `user_id` REFERENCES `users(id)`
-
-**Business Rules:**
-- Tokens expire after 1 hour
-- Tokens can only be used once (`used_at` is set)
-- Expired tokens should be cleaned up periodically
-- Multiple tokens can exist for a user (only latest is valid)
-
----
-
-### audit_logs
-
-Immutable audit trail for security and compliance.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | UUID | PRIMARY KEY | Unique log entry identifier |
-| user_id | UUID | NULL, FOREIGN KEY | Reference to users table |
-| action | VARCHAR(255) | NOT NULL | Action performed |
-| resource_type | VARCHAR(255) | NULL | Type of resource affected |
-| resource_id | VARCHAR(255) | NULL | ID of resource affected |
-| changes | JSON | NULL | JSON object of changes made |
-| ip_address | VARCHAR(45) | NULL | IP address of request |
-| user_agent | TEXT | NULL | Browser user agent string |
-| created_at | TIMESTAMP | NOT NULL | Log entry timestamp |
-
-**Indexes:**
-- Primary key on `id`
-- Index on `user_id` (for user activity queries)
-- Index on `action` (for action-based queries)
-- Index on `created_at` (for time-based queries)
-
-**Foreign Keys:**
-- `user_id` REFERENCES `users(id)` (nullable for system actions)
-
-**Logged Actions:**
-- `user_registered` - New user registration
-- `user_login` - Successful login
-- `user_logout` - User logout
-- `password_reset` - Password reset completed
-- `email_verified` - Email verification completed
-- (Future: course actions, enrollment, grades, etc.)
-
-**Immutable:**
-- No updates or deletes allowed
-- No `updated_at` column
-- Provides complete audit trail
-
----
-
-## Data Types
-
-### UUID
-- All primary keys use UUID v4
-- Provides security (non-sequential)
-- Prevents ID enumeration attacks
-- Better for distributed systems
-
-### ENUM
-- `roles.name`: Limited to specific values
-- Database-enforced data integrity
-- Efficient storage
-
-### JSON
-- `roles.permissions`: Array of permission strings
-- `audit_logs.changes`: Object containing changes
-- PostgreSQL JSON type with indexing support
-
-### TIMESTAMP
-- All timestamps include timezone
-- Stored in UTC
-- Converted to local time by application
-
-## Relationships
-
-### One-to-Many
-
-**roles → users**
-- One role has many users
-- Each user has exactly one role
-- Cannot delete role if users exist (foreign key constraint)
-
-**users → password_reset_tokens**
-- One user can have multiple reset tokens
-- Typically only latest token is valid
-- Old tokens remain for audit purposes
-
-**users → audit_logs**
-- One user has many audit log entries
-- User can be null for system actions
-- Cascade delete not enabled (preserve audit trail)
-
-## Indexes Strategy
-
-### Primary Indexes (Automatic)
-- All primary keys (UUID)
-- All unique constraints
-
-### Foreign Key Indexes
-- `users.role_id`
-- `password_reset_tokens.user_id`
-- `audit_logs.user_id`
-
-### Lookup Indexes
-- `users.email` - Frequent login lookups
-- `users.username` - Profile lookups
-- `password_reset_tokens.token` - Reset token validation
-- `audit_logs.action` - Audit queries by action
-- `audit_logs.created_at` - Time-based audit queries
-
-## Query Optimization
-
-### Most Common Queries
-
-**User Login:**
-```sql
-SELECT u.*, r.* 
-FROM users u
-JOIN roles r ON u.role_id = r.id
-WHERE u.email = ? AND u.deleted_at IS NULL;
-```
-- Uses index on `users.email`
-- Join is efficient with foreign key index
-
-**Check Reset Token:**
-```sql
-SELECT * FROM password_reset_tokens
-WHERE token = ? AND expires_at > NOW() AND used_at IS NULL;
-```
-- Uses unique index on `token`
-- Very fast lookup (O(1))
-
-**User Audit Trail:**
-```sql
-SELECT * FROM audit_logs
-WHERE user_id = ?
-ORDER BY created_at DESC
-LIMIT 50;
-```
-- Uses index on `user_id`
-- Index on `created_at` for sorting
-
-## Database Maintenance
-
-### Regular Tasks
-
-**Clean Expired Tokens:**
-```sql
-DELETE FROM password_reset_tokens
-WHERE expires_at < NOW() - INTERVAL '7 days';
-```
-- Run daily
-- Keeps table size manageable
-
-**Archive Old Audit Logs:**
-```sql
--- Move logs older than 1 year to archive table
-INSERT INTO audit_logs_archive
-SELECT * FROM audit_logs
-WHERE created_at < NOW() - INTERVAL '1 year';
-
-DELETE FROM audit_logs
-WHERE created_at < NOW() - INTERVAL '1 year';
-```
-- Run monthly/quarterly
-- Maintains performance
-
-### Backups
-
-- Daily full backups
-- Point-in-time recovery enabled
-- Test restoration quarterly
-
-### Monitoring
-
-- Table sizes
-- Index usage statistics
-- Query performance
-- Connection pool status
-- Lock contention
-
-## Migration Strategy
-
-### Creating Migrations
-
-Sequelize handles migrations automatically with `sequelize.sync()`. For production, use explicit migrations:
-
-```bash
-npm run migrate
-```
-
-### Rollback Strategy
-
-Soft deletes allow data recovery:
-- User accounts can be restored
-- No data loss on "delete"
-- Audit trail preserved
+### Frontend Validation
+- Form validation using React Hook Form
+- Client-side validation before API calls
+- Error handling and user feedback
 
 ## Security Considerations
 
-### SQL Injection Prevention
-- Sequelize ORM handles parameterization
-- No raw SQL with user input
-- All queries use prepared statements
+### Data Protection
+- Password hashing with bcrypt (10 rounds)
+- JWT token encryption
+- HTTPS for all communications
+- Input sanitization
 
-### Sensitive Data
-- Passwords are hashed (never stored plain)
-- Tokens are UUIDs (cryptographically random)
-- Email verification tokens expire
+### Access Control
+- Role-based access control (RBAC)
+- Permission-based authorization
+- Ownership checks for resource access
 
 ### Audit Trail
-- All authentication actions logged
-- IP addresses recorded
-- Cannot be modified or deleted
-- Compliance ready
+- Comprehensive audit logging
+- User action tracking
+- Resource change history
 
-## Future Schema (Phase 2+)
+## Performance Considerations
 
-Planned tables for future phases:
+### Query Optimization
+- Proper indexing strategy
+- Eager loading for associations
+- Query batching
+- Pagination for list endpoints
 
-- **courses** - Course information
-- **lessons** - Lesson content
-- **enrollments** - User course enrollments
-- **assignments** - Assignment details
-- **submissions** - Student submissions
-- **quizzes** - Quiz definitions
-- **quiz_attempts** - Quiz attempts and scores
-- **certificates** - Generated certificates
-- **notifications** - User notifications
-- **files** - Uploaded files metadata
+### Caching
+- Redis caching for frequent queries
+- Response caching for public data
+- Token blacklisting via Redis
 
----
+### Scalability
+- Connection pooling
+- Read replicas for reporting
+- Horizontal scaling readiness
 
-For implementation details, see `/backend/src/models/` directory.
+## Backup and Recovery
+
+### Backup Strategy
+- Regular database backups
+- Point-in-time recovery capability
+- Backup verification procedures
+
+### Disaster Recovery
+- Multi-region deployment readiness
+- Failover procedures
+- Data replication
+
+## Monitoring and Maintenance
+
+### Database Monitoring
+- Query performance monitoring
+- Index usage analysis
+- Table size monitoring
+
+### Maintenance Tasks
+- Regular index optimization
+- Vacuum and analyze operations
+- Database health checks
+
+## Future Extensions
+
+### Planned Schema Additions
+- Certificates table for course completion
+- Quizzes and assignments tables
+- Course reviews and ratings
+- User notifications
+- Payment transactions
+- Learning paths and collections
+
+### Scalability Enhancements
+- Database sharding
+- Read/write separation
+- Advanced caching strategies
+- Microservices architecture
+
+This comprehensive database schema provides a solid foundation for the Advanced LMS platform, supporting all Phase 2 features including course management, enrollment system, lesson structure, and progress tracking.
