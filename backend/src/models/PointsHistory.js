@@ -47,20 +47,19 @@ const PointsHistory = sequelize.define('PointsHistory', {
     defaultValue: 1.0
   },
   description: {
-    type: DataTypes.TEXT,
-    allowNull: true
+  type: DataTypes.TEXT,
+  allowNull: true
   }
-}, {
+  }, {
   tableName: 'points_history',
-  timestamps: false,
-  createdAt: 'created_at',
+  timestamps: true,
   updatedAt: false,
   indexes: [
-    { fields: ['user_id'] },
-    { fields: ['created_at'] },
-    { fields: ['activity_type'] }
+  { fields: ['user_id'] },
+  { fields: ['created_at'] },
+  { fields: ['activity_type'] }
   ]
-});
+  });
 
 // Associations
 PointsHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
