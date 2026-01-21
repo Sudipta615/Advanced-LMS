@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const User = require('./User');
 
 const Achievement = sequelize.define('Achievement', {
   id: {
@@ -48,10 +47,5 @@ const Achievement = sequelize.define('Achievement', {
     { fields: ['unlocked_at'] }
   ]
 });
-
-// Associations
-Achievement.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-
-// Reverse association defined in User model
 
 module.exports = Achievement;
