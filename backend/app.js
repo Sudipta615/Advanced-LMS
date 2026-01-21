@@ -12,6 +12,7 @@ const certificateRoutes = require('./src/routes/certificateRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const adminAnalyticsRoutes = require('./src/routes/adminAnalyticsRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+const gamificationRoutes = require('./src/routes/gamificationRoutes');
 const userPreferenceRoutes = require('./src/routes/userPreferenceRoutes');
 const communicationRoutes = require('./src/routes/communicationRoutes');
 
@@ -49,6 +50,7 @@ app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api', quizRoutes);
 app.use('/api', assignmentRoutes);
 app.use('/api', certificateRoutes);
+app.use('/api', gamificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
 app.use('/api/admin', adminRoutes);

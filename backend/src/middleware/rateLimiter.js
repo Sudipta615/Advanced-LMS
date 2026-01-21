@@ -37,9 +37,16 @@ const generalLimiter = createRateLimiter(
   'Too many requests, please try again later'
 );
 
+const adminLimiter = createRateLimiter(
+  5 * 60 * 1000,
+  20,
+  'Too many admin operations, please try again after 5 minutes'
+);
+
 module.exports = {
   registerLimiter,
   loginLimiter,
   passwordResetLimiter,
-  generalLimiter
+  generalLimiter,
+  adminLimiter
 };
