@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 const BadgeCategory = require('./BadgeCategory');
+const UserBadge = require('./UserBadge');
 
 const Badge = sequelize.define('Badge', {
   id: {
@@ -72,7 +73,10 @@ const Badge = sequelize.define('Badge', {
   ]
 });
 
+// Associations
 Badge.belongsTo(BadgeCategory, { foreignKey: 'category_id', as: 'category' });
-BadgeCategory.hasMany(Badge, { foreignKey: 'category_id', as: 'badges' });
+Badge.hasMany(UserBadge, { foreignKey: 'badge_id', as: 'userBadges' });
+
+// Reverse association defined in BadgeCategory model
 
 module.exports = Badge;

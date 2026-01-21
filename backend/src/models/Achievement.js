@@ -49,7 +49,9 @@ const Achievement = sequelize.define('Achievement', {
   ]
 });
 
+// Associations
 Achievement.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-User.hasMany(Achievement, { foreignKey: 'user_id', as: 'achievements' });
+
+// Reverse association defined in User model
 
 module.exports = Achievement;

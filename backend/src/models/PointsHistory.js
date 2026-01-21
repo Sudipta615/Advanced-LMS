@@ -62,7 +62,9 @@ const PointsHistory = sequelize.define('PointsHistory', {
   ]
 });
 
+// Associations
 PointsHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-User.hasMany(PointsHistory, { foreignKey: 'user_id', as: 'pointsHistory' });
+
+// Reverse associations defined in User and UserPoint models
 
 module.exports = PointsHistory;

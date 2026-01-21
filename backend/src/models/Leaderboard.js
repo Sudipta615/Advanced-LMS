@@ -62,9 +62,10 @@ const Leaderboard = sequelize.define('Leaderboard', {
   ]
 });
 
+// Associations
 Leaderboard.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Leaderboard.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
-User.hasMany(Leaderboard, { foreignKey: 'user_id', as: 'leaderboardEntries' });
-Course.hasMany(Leaderboard, { foreignKey: 'course_id', as: 'leaderboardEntries' });
+
+// Reverse associations defined in User and Course models
 
 module.exports = Leaderboard;
