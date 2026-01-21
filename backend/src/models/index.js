@@ -11,6 +11,20 @@ const LessonCompletion = require('./LessonCompletion');
 const CoursePrerequisite = require('./CoursePrerequisite');
 const CourseTag = require('./CourseTag');
 
+const Quiz = require('./Quiz');
+const QuizQuestion = require('./QuizQuestion');
+const QuizAnswerOption = require('./QuizAnswerOption');
+const QuizAttempt = require('./QuizAttempt');
+const QuizResponse = require('./QuizResponse');
+const Assignment = require('./Assignment');
+const AssignmentSubmission = require('./AssignmentSubmission');
+const Certificate = require('./Certificate');
+const CertificateTemplate = require('./CertificateTemplate');
+const Notification = require('./Notification');
+const Announcement = require('./Announcement');
+const CourseDiscussion = require('./CourseDiscussion');
+const DiscussionComment = require('./DiscussionComment');
+
 module.exports = {
   Role,
   User,
@@ -23,5 +37,19 @@ module.exports = {
   Enrollment,
   LessonCompletion,
   CoursePrerequisite,
-  CourseTag
+  CourseTag,
+
+  Quiz,
+  QuizQuestion,
+  QuizAnswerOption,
+  QuizAttempt,
+  QuizResponse,
+  Assignment,
+  AssignmentSubmission,
+  Certificate,
+  CertificateTemplate,
+  Notification,
+  Announcement,
+  CourseDiscussion,
+  DiscussionComment
 };

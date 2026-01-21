@@ -4,6 +4,12 @@ const helmet = require('helmet');
 const authRoutes = require('./src/routes/authRoutes');
 const courseRoutes = require('./src/routes/courseRoutes');
 const enrollmentRoutes = require('./src/routes/enrollmentRoutes');
+const quizRoutes = require('./src/routes/quizRoutes');
+const assignmentRoutes = require('./src/routes/assignmentRoutes');
+const certificateRoutes = require('./src/routes/certificateRoutes');
+const analyticsRoutes = require('./src/routes/analyticsRoutes');
+const adminAnalyticsRoutes = require('./src/routes/adminAnalyticsRoutes');
+const communicationRoutes = require('./src/routes/communicationRoutes');
 const errorHandler = require('./src/middleware/errorHandler');
 const { generalLimiter } = require('./src/middleware/rateLimiter');
 
@@ -32,6 +38,12 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api', quizRoutes);
+app.use('/api', assignmentRoutes);
+app.use('/api', certificateRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin/analytics', adminAnalyticsRoutes);
+app.use('/api', communicationRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

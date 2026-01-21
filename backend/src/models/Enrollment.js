@@ -63,5 +63,6 @@ const Enrollment = sequelize.define('Enrollment', {
 
 Enrollment.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Enrollment.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
+Course.hasMany(Enrollment, { foreignKey: 'course_id', as: 'enrollments' });
 
 module.exports = Enrollment;
