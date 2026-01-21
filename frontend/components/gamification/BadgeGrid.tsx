@@ -120,17 +120,20 @@ export function BadgeGrid({
   return (
     <div className="space-y-6">
       {/* Filters and Sort */}
-      <div className="bg-white rounded-lg shadow-md p-4">
+      <section className="bg-white rounded-lg shadow-md p-4" aria-labelledby="badge-filter-heading">
+        <h2 id="badge-filter-heading" className="sr-only">Filter and sort badges</h2>
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           {/* Category Filter */}
-          <div className="flex flex-wrap gap-2">
+          <nav className="flex flex-wrap gap-2" aria-label="Badge categories">
             <button
               onClick={() => setFilter('all')}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 filter === 'all'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500`}
+              aria-current={filter === 'all' ? 'page' : undefined}
+              aria-pressed={filter === 'all'}
             >
               All
             </button>
@@ -140,7 +143,9 @@ export function BadgeGrid({
                 filter === 'achievement'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500`}
+              aria-current={filter === 'achievement' ? 'page' : undefined}
+              aria-pressed={filter === 'achievement'}
             >
               Achievement
             </button>
@@ -150,7 +155,9 @@ export function BadgeGrid({
                 filter === 'milestone'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500`}
+              aria-current={filter === 'milestone' ? 'page' : undefined}
+              aria-pressed={filter === 'milestone'}
             >
               Milestone
             </button>
@@ -160,7 +167,9 @@ export function BadgeGrid({
                 filter === 'skill'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500`}
+              aria-current={filter === 'skill' ? 'page' : undefined}
+              aria-pressed={filter === 'skill'}
             >
               Skill
             </button>
@@ -170,20 +179,24 @@ export function BadgeGrid({
                 filter === 'social'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500`}
+              aria-current={filter === 'social' ? 'page' : undefined}
+              aria-pressed={filter === 'social'}
             >
               Social
             </button>
-          </div>
+          </nav>
 
           {/* Sort and Earned Toggle */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <ArrowUpDown className="w-4 h-4 text-gray-500" />
+              <ArrowUpDown className="w-4 h-4 text-gray-500" aria-hidden="true" />
+              <label htmlFor="badge-sort" className="sr-only">Sort badges</label>
               <select
+                id="badge-sort"
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortType)}
-                className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
               >
                 <option value="difficulty">Difficulty</option>
                 <option value="name">Name</option>
@@ -197,7 +210,8 @@ export function BadgeGrid({
                 type="checkbox"
                 checked={showEarnedOnly}
                 onChange={(e) => setShowEarnedOnly(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 rounded focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                aria-label="Show earned badges only"
               />
               Earned Only
             </label>
@@ -205,14 +219,17 @@ export function BadgeGrid({
         </div>
 
         {/* Results Count */}
-        <div className="mt-3 text-sm text-gray-600">
+        <p className="mt-3 text-sm text-gray-600" aria-live="polite">
           Showing {paginatedBadges.length} of {filteredAndSortedBadges.length} badges
-        </div>
-      </div>
+        </p>
+      </section>
 
       {/* Badge Grid */}
       {paginatedBadges.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <section
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          aria-label={`Badges grid, ${paginatedBadges.length} badges`}
+        >
           {paginatedBadges.map((badge) => (
             <BadgeCard
               key={badge.id}
@@ -223,10 +240,10 @@ export function BadgeGrid({
               onClick={() => handleBadgeClick(badge)}
             />
           ))}
-        </div>
+        </section>
       ) : (
-        <div className="text-center py-12">
-          <Filter className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+        <div className="text-center py-12" role="status">
+          <Filter className="w-16 h-16 mx-auto text-gray-300 mb-4" aria-hidden="true" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             No badges found
           </h3>
@@ -238,11 +255,17 @@ export function BadgeGrid({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2">
+        <nav
+          className="flex justify-center items-center gap-2"
+          role="navigation"
+          aria-label="Badge grid pagination"
+        >
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+            aria-label="Go to previous page"
+            aria-disabled={page === 1}
           >
             Previous
           </button>
@@ -254,7 +277,9 @@ export function BadgeGrid({
                 page === pageNum
                   ? 'bg-blue-600 text-white'
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500`}
+              aria-label={`Go to page ${pageNum}`}
+              aria-current={page === pageNum ? 'page' : undefined}
             >
               {pageNum}
             </button>
@@ -262,11 +287,13 @@ export function BadgeGrid({
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+            aria-label="Go to next page"
+            aria-disabled={page === totalPages}
           >
             Next
           </button>
-        </div>
+        </nav>
       )}
     </div>
   );

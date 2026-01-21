@@ -115,11 +115,11 @@ export function LeaderboardTable({
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
+      <header className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Trophy className="w-8 h-8" />
+              <Trophy className="w-8 h-8" aria-hidden="true" />
               Leaderboard
             </h2>
             <p className="text-blue-100 mt-1">{getPeriodLabel()} Rankings</p>
@@ -131,69 +131,77 @@ export function LeaderboardTable({
             </div>
           )}
         </div>
-      </div>
+      </header>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table
+          className="w-full"
+          role="grid"
+          aria-label={`${getPeriodLabel()} Leaderboard`}
+        >
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-4 text-left">
+              <th scope="col" className="px-6 py-4 text-left">
                 <button
                   onClick={() => handleSort('rank')}
-                  className="flex items-center gap-2 font-semibold text-gray-700 hover:text-blue-600 transition-colors"
+                  className="flex items-center gap-2 font-semibold text-gray-700 hover:text-blue-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                  aria-label={`Sort by rank ${sortColumn === 'rank' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : ''}`}
                 >
                   Rank
                   {sortColumn === 'rank' && (
-                    <span className="text-blue-600">
+                    <span className="text-blue-600" aria-hidden="true">
                       {sortDirection === 'asc' ? '↑' : '↓'}
                     </span>
                   )}
                 </button>
               </th>
-              <th className="px-6 py-4 text-left font-semibold text-gray-700">
+              <th scope="col" className="px-6 py-4 text-left font-semibold text-gray-700">
                 User
               </th>
-              <th className="px-6 py-4 text-left">
+              <th scope="col" className="px-6 py-4 text-left">
                 <button
                   onClick={() => handleSort('points')}
-                  className="flex items-center gap-2 font-semibold text-gray-700 hover:text-blue-600 transition-colors"
+                  className="flex items-center gap-2 font-semibold text-gray-700 hover:text-blue-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                  aria-label={`Sort by points ${sortColumn === 'points' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : ''}`}
                 >
                   Points
                   {sortColumn === 'points' && (
-                    <span className="text-blue-600">
+                    <span className="text-blue-600" aria-hidden="true">
                       {sortDirection === 'asc' ? '↑' : '↓'}
                     </span>
                   )}
                 </button>
               </th>
-              <th className="px-6 py-4 text-left">
+              <th scope="col" className="px-6 py-4 text-left">
                 <button
                   onClick={() => handleSort('badges')}
-                  className="flex items-center gap-2 font-semibold text-gray-700 hover:text-blue-600 transition-colors"
+                  className="flex items-center gap-2 font-semibold text-gray-700 hover:text-blue-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                  aria-label={`Sort by badges ${sortColumn === 'badges' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : ''}`}
                 >
                   Badges
                   {sortColumn === 'badges' && (
-                    <span className="text-blue-600">
+                    <span className="text-blue-600" aria-hidden="true">
                       {sortDirection === 'asc' ? '↑' : '↓'}
                     </span>
                   )}
                 </button>
               </th>
-              <th className="px-6 py-4 text-left">
+              <th scope="col" className="px-6 py-4 text-left">
                 <button
                   onClick={() => handleSort('courses')}
-                  className="flex items-center gap-2 font-semibold text-gray-700 hover:text-blue-600 transition-colors"
+                  className="flex items-center gap-2 font-semibold text-gray-700 hover:text-blue-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                  aria-label={`Sort by courses ${sortColumn === 'courses' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : ''}`}
                 >
                   Courses
                   {sortColumn === 'courses' && (
-                    <span className="text-blue-600">
+                    <span className="text-blue-600" aria-hidden="true">
                       {sortDirection === 'asc' ? '↑' : '↓'}
                     </span>
                   )}
                 </button>
               </th>
-              <th className="px-6 py-4 text-center font-semibold text-gray-700">
+              <th scope="col" className="px-6 py-4 text-center font-semibold text-gray-700">
                 Change
               </th>
             </tr>
@@ -208,7 +216,7 @@ export function LeaderboardTable({
                 `}
               >
                 <td className="px-6 py-4">
-                  <div className="flex items-center justify-center w-10 h-10">
+                  <div className="flex items-center justify-center w-10 h-10" aria-label={`Rank ${entry.rank}`}>
                     {getRankDisplay(entry.rank)}
                   </div>
                 </td>
@@ -221,7 +229,10 @@ export function LeaderboardTable({
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold">
+                      <div
+                        className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold"
+                        aria-hidden="true"
+                      >
                         {entry.first_name[0]}{entry.last_name[0]}
                       </div>
                     )}
@@ -238,25 +249,25 @@ export function LeaderboardTable({
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-lg font-bold text-yellow-600">
+                  <div className="text-lg font-bold text-yellow-600" aria-label={`${entry.total_points.toLocaleString()} points`}>
                     {entry.total_points.toLocaleString()}
                   </div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">🏆</span>
-                    <span className="font-semibold text-gray-900">
+                    <span className="text-lg" aria-hidden="true">🏆</span>
+                    <span className="font-semibold text-gray-900" aria-label={`${entry.badges_count} badges`}>
                       {entry.badges_count}
                     </span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="font-semibold text-gray-900">
+                  <div className="font-semibold text-gray-900" aria-label={`${entry.courses_completed} courses`}>
                     {entry.courses_completed}
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex justify-center">
+                  <div className="flex justify-center" aria-label={`Rank change ${entry.rank_change !== undefined ? (entry.rank_change > 0 ? `up ${entry.rank_change}` : entry.rank_change < 0 ? `down ${Math.abs(entry.rank_change)}` : 'no change') : 'not available'}`}>
                     {getRankChange(entry.rank_change)}
                   </div>
                 </td>
@@ -275,11 +286,17 @@ export function LeaderboardTable({
               {Math.min(page * itemsPerPage, sortedLeaderboard.length)} of{' '}
               {sortedLeaderboard.length} entries
             </div>
-            <div className="flex items-center gap-2">
+            <nav
+              className="flex items-center gap-2"
+              role="navigation"
+              aria-label="Leaderboard pagination"
+            >
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                aria-label="Go to previous page"
+                aria-disabled={page === 1}
               >
                 Previous
               </button>
@@ -302,7 +319,9 @@ export function LeaderboardTable({
                       page === pageNum
                         ? 'bg-blue-600 text-white'
                         : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500`}
+                    aria-label={`Go to page ${pageNum}`}
+                    aria-current={page === pageNum ? 'page' : undefined}
                   >
                     {pageNum}
                   </button>
@@ -311,11 +330,13 @@ export function LeaderboardTable({
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                aria-label="Go to next page"
+                aria-disabled={page === totalPages}
               >
                 Next
               </button>
-            </div>
+            </nav>
           </div>
         </div>
       )}

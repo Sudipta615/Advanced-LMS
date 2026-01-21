@@ -55,7 +55,7 @@ export function GamificationDashboard({ userId }: GamificationDashboardProps) {
       setError(null);
 
       // In a real implementation, these would be actual API calls
-      // For now, we'll simulate the data structure
+      // For now, we'll simulate data structure
 
       // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -86,11 +86,10 @@ export function GamificationDashboard({ userId }: GamificationDashboardProps) {
       setAchievements([]);
       setUnlockedAchievements([]);
       setLeaderboard([]);
-      setUserRank(15);
-
+      setUserRank(42);
     } catch (err) {
+      console.error('Failed to fetch gamification data:', err);
       setError('Failed to load gamification data. Please try again.');
-      console.error('Error fetching gamification data:', err);
     } finally {
       setLoading(false);
     }
@@ -105,60 +104,75 @@ export function GamificationDashboard({ userId }: GamificationDashboardProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <LoadingSpinner size="large" />
+      <div className="flex items-center justify-center min-h-[400px]" role="status" aria-live="polite">
+        <LoadingSpinner size="large" label="Loading gamification data" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6">
+      <div className="p-6" role="alert">
         <Alert type="error" message={error} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <section className="space-y-6" aria-labelledby="gamification-dashboard-heading">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <header>
+        <h1 id="gamification-dashboard-heading" className="text-3xl font-bold text-gray-900 mb-2">
           Gamification Dashboard
         </h1>
         <p className="text-gray-600">
           Track your progress, earn badges, and compete with others!
         </p>
-      </div>
+      </header>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="flex border-b border-gray-200 overflow-x-auto">
+      <nav
+        className="bg-white rounded-lg shadow-md overflow-hidden"
+        role="tablist"
+        aria-label="Gamification dashboard sections"
+      >
+        <div className="flex border-b border-gray-200 overflow-x-auto" role="presentation">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`panel-${tab.id}`}
+                id={`tab-${tab.id}`}
                 className={`
-                  flex items-center gap-2 px-6 py-4 font-medium transition-colors whitespace-nowrap
+                  flex items-center gap-2 px-6 py-4 font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500
                   ${activeTab === tab.id
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }
                 `}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-5 h-5" aria-hidden="true" />
                 {tab.label}
               </button>
             );
           })}
         </div>
+      </nav>
 
-        {/* Tab Content */}
-        <div className="p-6">
-          {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Tab Content */}
+      <div className="p-6">
+        {activeTab === 'overview' && (
+          <div
+            id="panel-overview"
+            role="tabpanel"
+            aria-labelledby="tab-overview"
+            tabIndex={0}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+          >
               {/* Points Card */}
               <div>
                 <PointsCard
@@ -183,72 +197,86 @@ export function GamificationDashboard({ userId }: GamificationDashboardProps) {
               <div className="lg:col-span-2">
                 <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6">
                   <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Target className="w-6 h-6 text-purple-600" />
+                    <Target className="w-6 h-6 text-purple-600" aria-hidden="true" />
                     Quick Stats
                   </h2>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="text-2xl font-bold text-blue-600">
+                      <div className="text-2xl font-bold text-blue-600" aria-label={`${pointsData.totalPoints.toLocaleString()} total points`}>
                         {pointsData.totalPoints.toLocaleString()}
                       </div>
                       <div className="text-sm text-gray-600">Total Points</div>
                     </div>
                     <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="text-2xl font-bold text-yellow-600">
+                      <div className="text-2xl font-bold text-yellow-600" aria-label={`${userBadges.length} badges earned`}>
                         {userBadges.length}
                       </div>
                       <div className="text-sm text-gray-600">Badges Earned</div>
                     </div>
                     <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-2xl font-bold text-green-600" aria-label={`${streakData.currentStreak} day streak`}>
                         {streakData.currentStreak}
                       </div>
                       <div className="text-sm text-gray-600">Day Streak</div>
                     </div>
                     <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="text-2xl font-bold text-purple-600">
-                        #{userRank || '-'}
+                      <div className="text-2xl font-bold text-purple-600" aria-label={`Rank ${userRank || 'N/A'}`}>
+                        #{userRank || 'N/A'}
                       </div>
                       <div className="text-sm text-gray-600">Your Rank</div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+          </div>
+        )}
 
-          {activeTab === 'badges' && (
-            <div>
-              <BadgeGrid
-                badges={badges}
-                userBadges={userBadges}
-                showProgress={true}
-                progressData={{}}
-              />
-            </div>
-          )}
+        {activeTab === 'badges' && (
+          <div
+            id="panel-badges"
+            role="tabpanel"
+            aria-labelledby="tab-badges"
+            tabIndex={0}
+          >
+            <BadgeGrid
+              badges={badges}
+              userBadges={userBadges}
+              showProgress={true}
+              progressData={{}}
+            />
+          </div>
+        )}
 
-          {activeTab === 'achievements' && (
-            <div>
-              <AchievementTimeline
-                achievements={achievements}
-                unlockedAchievements={unlockedAchievements}
-              />
-            </div>
-          )}
+        {activeTab === 'achievements' && (
+          <div
+            id="panel-achievements"
+            role="tabpanel"
+            aria-labelledby="tab-achievements"
+            tabIndex={0}
+          >
+            <AchievementTimeline
+              achievements={achievements}
+              unlockedAchievements={unlockedAchievements}
+            />
+          </div>
+        )}
 
-          {activeTab === 'leaderboard' && (
-            <div>
-              <LeaderboardTable
-                leaderboard={leaderboard}
-                period="all_time"
-                userRank={userRank}
-                userId={userId}
-              />
-            </div>
-          )}
-        </div>
+        {activeTab === 'leaderboard' && (
+          <div
+            id="panel-leaderboard"
+            role="tabpanel"
+            aria-labelledby="tab-leaderboard"
+            tabIndex={0}
+          >
+            <LeaderboardTable
+              leaderboard={leaderboard}
+              period="all_time"
+              userRank={userRank}
+              userId={userId}
+            />
+          </div>
+        )}
       </div>
-    </div>
+    </section>
   );
 }
