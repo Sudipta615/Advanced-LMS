@@ -13,7 +13,8 @@ const {
 const {
   registerLimiter,
   loginLimiter,
-  passwordResetLimiter
+  passwordResetLimiter,
+  emailVerificationLimiter
 } = require('../middleware/rateLimiter');
 
 router.post(
@@ -25,9 +26,11 @@ router.post(
 
 router.post(
   '/verify-email',
+  emailVerificationLimiter,
   validateRequest(verifyEmailSchema),
   authController.verifyEmail
 );
+
 
 router.post(
   '/login',

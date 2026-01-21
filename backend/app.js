@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
+const cookieParser = require('cookie-parser');
 
 const authRoutes = require('./src/routes/authRoutes');
 const courseRoutes = require('./src/routes/courseRoutes');
@@ -19,8 +20,14 @@ const communicationRoutes = require('./src/routes/communicationRoutes');
 const errorHandler = require('./src/middleware/errorHandler');
 const maintenanceMode = require('./src/middleware/maintenanceMode');
 const { generalLimiter } = require('./src/middleware/rateLimiter');
+const { csrfProtection } = require('./src/middleware/csrfProtection');
+const { securityMiddleware } = require('./src/middleware/securityLogger');
+
+const corsOptions = require('./src/config/corsConfig');
 
 const app = express();
+
+app.use(securityMiddleware);
 
 // Response time tracking middleware
 app.use((req, res, next) => {
@@ -38,19 +45,49 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(helmet());
+// Enhanced Security Headers with Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"], // Block inline scripts
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for React/Tailwind
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", process.env.FRONTEND_URL || 'http://localhost:3000'],
+      fontSrc: ["'self'", "https:", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  xssFilter: true,
+  noSniff: true,
+  frameguard: {
+    action: 'deny'
+  }
+}));
+
 app.use(compression());
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
+app.use(cors(corsOptions));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.use(generalLimiter);
 app.use(maintenanceMode);
+
+// CSRF Protection - apply after cookie-parser
+app.use(csrfProtection);
+
 
 app.get('/health', (req, res) => {
   res.status(200).json({

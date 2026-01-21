@@ -35,11 +35,17 @@ class TokenService {
       if (decoded && decoded.exp) {
         const ttl = decoded.exp - Math.floor(Date.now() / 1000);
         if (ttl > 0) {
+          // Store token in blacklist with TTL equal to remaining expiry
           await redisClient.setEx(`blacklist:${token}`, ttl, 'true');
         }
+      } else {
+        // If we can't decode it but want to blacklist it anyway (e.g. on logout/rotation)
+        // use a default TTL (e.g. 7 days for refresh tokens)
+        await redisClient.setEx(`blacklist:${token}`, 7 * 24 * 60 * 60, 'true');
       }
     } catch (error) {
-      console.error('❌ Error blacklisting token:', error);
+      // Even if verification fails, we should still blacklist the string if it's provided
+      await redisClient.setEx(`blacklist:${token}`, 7 * 24 * 60 * 60, 'true');
     }
   }
 
