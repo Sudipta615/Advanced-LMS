@@ -1,0 +1,21 @@
+// Gamification UI Components
+export { PointsCard } from './PointsCard';
+export { PointsNotification } from './PointsNotification';
+export { BadgeCard } from './BadgeCard';
+export { BadgeDetailsModal } from './BadgeDetailsModal';
+export { BadgeGrid } from './BadgeGrid';
+export { AchievementCard } from './AchievementCard';
+export { AchievementTimeline } from './AchievementTimeline';
+export { StreakDisplay } from './StreakDisplay';
+export { StreakCalendar } from './StreakCalendar';
+export { LeaderboardTable } from './LeaderboardTable';
+export { LeaderboardRank } from './LeaderboardRank';
+export { PointsProgress } from './PointsProgress';
+export { BadgeProgressBar } from './BadgeProgressBar';
+export { GamificationDashboard } from './GamificationDashboard';
+export { LeaderboardPeriodTabs } from './LeaderboardPeriodTabs';
+export { PointsHistoryList } from './PointsHistoryList';
+export { NotificationCenter } from './NotificationCenter';
+export { LearningStreakReminder } from './LearningStreakReminder';
+export { UserRankComparison } from './UserRankComparison';
+export { GamificationStats } from './GamificationStats';
