@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const User = require('./User');
 
 const UserPoint = sequelize.define('UserPoint', {
   id: {
@@ -64,10 +63,5 @@ const UserPoint = sequelize.define('UserPoint', {
     { fields: ['total_points'] }
   ]
 });
-
-// Associations
-UserPoint.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-
-// Reverse association defined in User model
 
 module.exports = UserPoint;

@@ -7,12 +7,14 @@ const PointsHistory = require('./PointsHistory');
 const Achievement = require('./Achievement');
 const LearningStreak = require('./LearningStreak');
 const Leaderboard = require('./Leaderboard');
+const Badge = require('./Badge');
+const BadgeCategory = require('./BadgeCategory');
 
 /**
  * Setup all gamification model associations
  * This should be called after all models are loaded
  */
-function setupGamificationAssociations(User) {
+function setupGamificationAssociations(User, Course) {
   // User relationships
   User.hasOne(UserPoint, { foreignKey: 'user_id', as: 'points' });
   User.hasMany(UserBadge, { foreignKey: 'user_id', as: 'badges' });
@@ -28,6 +30,19 @@ function setupGamificationAssociations(User) {
   Achievement.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
   LearningStreak.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
   Leaderboard.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+  // Badge relationships
+  BadgeCategory.hasMany(Badge, { foreignKey: 'category_id', as: 'badges' });
+  Badge.belongsTo(BadgeCategory, { foreignKey: 'category_id', as: 'category' });
+
+  Badge.hasMany(UserBadge, { foreignKey: 'badge_id', as: 'userBadges' });
+  UserBadge.belongsTo(Badge, { foreignKey: 'badge_id', as: 'badge' });
+
+  // Course associations with gamification models
+  if (Course) {
+    Course.hasMany(Leaderboard, { foreignKey: 'course_id', as: 'leaderboards' });
+    Leaderboard.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
+  }
 }
 
 module.exports = {

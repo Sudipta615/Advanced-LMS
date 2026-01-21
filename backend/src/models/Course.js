@@ -2,7 +2,6 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 const User = require('./User');
 const Category = require('./Category');
-const Leaderboard = require('./Leaderboard');
 
 const Course = sequelize.define('Course', {
   id: {
@@ -151,8 +150,5 @@ Course.belongsTo(User, { foreignKey: 'instructor_id', as: 'instructor' });
 Course.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 Course.belongsTo(User, { foreignKey: 'updated_by', as: 'updater' });
 Course.belongsTo(Category, { foreignKey: 'category_id', as: 'category' });
-
-// Gamification associations
-Course.hasMany(Leaderboard, { foreignKey: 'course_id', as: 'leaderboards' });
 
 module.exports = Course;

@@ -1,3 +1,5 @@
+const { sequelize } = require('../config/database');
+
 const Role = require('./Role');
 const User = require('./User');
 const PasswordResetToken = require('./PasswordResetToken');
@@ -43,6 +45,14 @@ const Achievement = require('./Achievement');
 const LearningStreak = require('./LearningStreak');
 const Leaderboard = require('./Leaderboard');
 
+// Setup gamification associations after models are loaded
+try {
+  const { setupGamificationAssociations } = require('./gamificationAssociations');
+  setupGamificationAssociations(User, Course);
+} catch (error) {
+  console.error('Failed to setup gamification associations:', error);
+}
+
 module.exports = {
   Role,
   User,
@@ -85,5 +95,8 @@ module.exports = {
   PointsHistory,
   Achievement,
   LearningStreak,
-  Leaderboard
+  Leaderboard,
+  
+  // Export sequelize for transactions and queries
+  sequelize
 };
