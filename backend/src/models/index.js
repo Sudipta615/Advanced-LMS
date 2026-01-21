@@ -33,6 +33,16 @@ const CourseApproval = require('./CourseApproval');
 const BackupLog = require('./BackupLog');
 const UserPreference = require('./UserPreference');
 
+// Phase 5 - Gamification
+const BadgeCategory = require('./BadgeCategory');
+const Badge = require('./Badge');
+const UserBadge = require('./UserBadge');
+const UserPoint = require('./UserPoint');
+const PointsHistory = require('./PointsHistory');
+const Achievement = require('./Achievement');
+const LearningStreak = require('./LearningStreak');
+const Leaderboard = require('./Leaderboard');
+
 module.exports = {
   Role,
   User,
@@ -66,5 +76,14 @@ module.exports = {
   UserBan,
   CourseApproval,
   BackupLog,
-  UserPreference
+  UserPreference,
+
+  BadgeCategory,
+  Badge,
+  UserBadge,
+  UserPoint,
+  PointsHistory,
+  Achievement,
+  LearningStreak,
+  Leaderboard
 };
