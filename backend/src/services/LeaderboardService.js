@@ -1,6 +1,7 @@
 const { Leaderboard, User, UserPoint, UserBadge, Enrollment, PointsHistory, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { getRedisClient } = require('../config/redis');
+const { CacheManager, CACHE_TTL, CACHE_KEYS } = require('../utils/cacheManager');
 
 class LeaderboardService {
   /**
@@ -100,6 +101,9 @@ class LeaderboardService {
 
       await transaction.commit();
       console.log(`✅ Leaderboard recalculation completed: ${globalCount} global, ${courseCount} course entries`);
+
+      // Invalidate all leaderboard caches after recalculation
+      await CacheManager.invalidateLeaderboardCache();
 
       return { 
         globalLeaderboards: globalCount, 
@@ -361,6 +365,18 @@ class LeaderboardService {
    */
   static async getLeaderboard(courseId = null, period = 'all_time', limit = 10, offset = 0) {
     try {
+      // Try cache (only cache first page)
+      const scope = courseId || 'global';
+      const cacheKey = CACHE_KEYS.LEADERBOARD(scope, period);
+      const shouldCache = offset === 0 && limit === 10;
+      
+      if (shouldCache) {
+        const cached = await CacheManager.get(cacheKey);
+        if (cached) {
+          return cached;
+        }
+      }
+      
       const where = { ranking_period: period };
       
       if (courseId) {
@@ -397,7 +413,7 @@ class LeaderboardService {
         earnedAt: row.updated_at
       }));
 
-      return {
+      const result = {
         leaderboard,
         total: count,
         period,
@@ -405,6 +421,13 @@ class LeaderboardService {
         page: Math.floor(offset / limit) + 1,
         pageSize: limit
       };
+      
+      // Cache the result
+      if (shouldCache) {
+        await CacheManager.set(cacheKey, result, CACHE_TTL.LEADERBOARD);
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       throw error;

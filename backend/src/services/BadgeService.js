@@ -2,6 +2,7 @@ const { Badge, UserBadge, BadgeCategory, User, UserPoint, PointsHistory, Learnin
 const { Op } = require('sequelize');
 const PointsService = require('./PointsService');
 const NotificationService = require('./NotificationService');
+const { CacheManager } = require('../utils/cacheManager');
 
 class BadgeService {
   
@@ -631,6 +632,10 @@ class BadgeService {
       await this.createBadgeNotification(userId, badge, transaction);
 
       await transaction.commit();
+
+      // Invalidate user badge cache and leaderboard cache
+      await CacheManager.invalidateUserCache(userId);
+      await CacheManager.invalidateLeaderboardCache();
 
       return {
         userBadge,

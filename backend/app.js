@@ -22,6 +22,22 @@ const { generalLimiter } = require('./src/middleware/rateLimiter');
 
 const app = express();
 
+// Response time tracking middleware
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    res.setHeader('X-Response-Time', `${duration}ms`);
+    
+    if (process.env.NODE_ENV === 'development' && duration > 1000) {
+      console.log(`⚠️  Slow request: ${req.method} ${req.path} - ${duration}ms`);
+    }
+  });
+  
+  next();
+});
+
 app.use(helmet());
 app.use(compression());
 
