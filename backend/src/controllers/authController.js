@@ -1,4 +1,9 @@
 const authService = require('../services/authService');
+const { 
+  generateCsrfToken, 
+  setCsrfCookie, 
+  storeCsrfTokenInRedis 
+} = require('../middleware/csrfProtection');
 
 class AuthController {
   async register(req, res, next) {
@@ -49,15 +54,27 @@ class AuthController {
         userAgent
       );
 
+      // Generate CSRF token for the session
+      const csrfToken = generateCsrfToken();
+      setCsrfCookie(res, csrfToken);
+      
+      if (result.user && result.user.id) {
+        await storeCsrfTokenInRedis(result.user.id, csrfToken);
+      }
+
       res.status(200).json({
         success: true,
         message: 'Login successful',
-        data: result
+        data: {
+          ...result,
+          csrfToken // Include in response so frontend can store it
+        }
       });
     } catch (error) {
       next(error);
     }
   }
+
 
   async refreshToken(req, res, next) {
     try {
@@ -93,6 +110,9 @@ class AuthController {
         ipAddress,
         userAgent
       );
+
+      // Clear CSRF cookie
+      res.clearCookie('__csrf');
 
       res.status(200).json({
         success: true,

@@ -152,6 +152,14 @@ class AuthService {
       throw new Error('Invalid refresh token');
     }
 
+    // Check if token is blacklisted (Detect reuse/breach)
+    const isBlacklisted = await tokenService.isTokenBlacklisted(refreshToken);
+    if (isBlacklisted) {
+      // Token reuse detected! Potential security breach.
+      // In a real app, we should revoke all tokens for this user.
+      throw new Error('Security breach detected: Refresh token reuse');
+    }
+
     const user = await User.findByPk(decoded.id, {
       include: [{ model: Role, as: 'role' }]
     });
@@ -160,6 +168,9 @@ class AuthService {
       throw new Error('User not found or inactive');
     }
 
+    // Refresh token rotation: Blacklist old token, issue new ones
+    await tokenService.blacklistToken(refreshToken);
+    
     const tokens = await tokenService.generateTokens(user);
     return tokens;
   }

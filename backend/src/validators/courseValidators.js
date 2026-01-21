@@ -140,13 +140,16 @@ const createLessonSchema = Joi.object({
     is: 'video',
     then: Joi.string()
       .uri()
+      .max(2048)
       .required()
       .messages({
         'string.uri': 'Video URL must be a valid URL',
+        'string.max': 'Video URL cannot exceed 2048 characters',
         'any.required': 'Video URL is required for video lessons'
       }),
     otherwise: Joi.string()
       .uri()
+      .max(2048)
       .optional()
   }),
   video_provider: Joi.when('lesson_type', {
@@ -159,14 +162,15 @@ const createLessonSchema = Joi.object({
       .optional()
   }),
   document_paths: Joi.array()
-    .items(Joi.string())
+    .items(Joi.string().max(2048))
     .default([]),
   external_links: Joi.array()
     .items(Joi.object({
-      title: Joi.string().required(),
-      url: Joi.string().uri().required()
+      title: Joi.string().required().max(200),
+      url: Joi.string().uri().required().max(2048)
     }))
     .default([]),
+
   markdown_content: Joi.string()
     .optional(),
   display_order: Joi.number()
@@ -199,13 +203,16 @@ const updateLessonSchema = Joi.object({
     is: 'video',
     then: Joi.string()
       .uri()
+      .max(2048)
       .required()
       .messages({
         'string.uri': 'Video URL must be a valid URL',
+        'string.max': 'Video URL cannot exceed 2048 characters',
         'any.required': 'Video URL is required for video lessons'
       }),
     otherwise: Joi.string()
       .uri()
+      .max(2048)
       .optional()
   }),
   video_provider: Joi.when('lesson_type', {
@@ -218,14 +225,15 @@ const updateLessonSchema = Joi.object({
       .optional()
   }),
   document_paths: Joi.array()
-    .items(Joi.string())
+    .items(Joi.string().max(2048))
     .optional(),
   external_links: Joi.array()
     .items(Joi.object({
-      title: Joi.string().required(),
-      url: Joi.string().uri().required()
+      title: Joi.string().required().max(200),
+      url: Joi.string().uri().required().max(2048)
     }))
     .optional(),
+
   markdown_content: Joi.string()
     .optional(),
   display_order: Joi.number()

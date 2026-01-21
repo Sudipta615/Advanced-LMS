@@ -13,12 +13,17 @@ const {
   updateLessonSchema
 } = require('../validators/courseValidators');
 
+const {
+  apiLimiter
+} = require('../middleware/rateLimiter');
+
 // Course routes
-router.get('/', courseController.getAllCourses);
-router.get('/:id', courseController.getCourseById);
+router.get('/', apiLimiter, courseController.getAllCourses);
+router.get('/:id', apiLimiter, courseController.getCourseById);
 
 // Protected routes - require authentication
 router.use(authenticateToken);
+router.use(apiLimiter);
 
 // Course management routes (instructor/admin only)
 router.post(
