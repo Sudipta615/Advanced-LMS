@@ -45,7 +45,10 @@ const authorizePermission = (...requiredPermissions) => {
   };
 };
 
+const checkRole = (roles = []) => authorizeRole(...roles);
+
 module.exports = {
   authorizeRole,
-  authorizePermission
+  authorizePermission,
+  checkRole
 };

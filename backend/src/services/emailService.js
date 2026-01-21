@@ -1,6 +1,11 @@
 const nodemailer = require('nodemailer');
 const emailConfig = require('../config/email');
-const { getEmailVerificationTemplate, getPasswordResetTemplate } = require('../utils/emailTemplates');
+const {
+  getEmailVerificationTemplate,
+  getPasswordResetTemplate,
+  getWelcomeTemplate,
+  getAdminPasswordResetTemplate
+} = require('../utils/emailTemplates');
 
 class EmailService {
   constructor() {
@@ -71,6 +76,56 @@ class EmailService {
     } catch (error) {
       console.error('❌ Error sending password reset email:', error);
       throw new Error('Failed to send password reset email');
+    }
+  }
+
+  async sendWelcomeEmail(email, tempPassword, firstName) {
+    if (!this.transporter) {
+      console.log('📧 Welcome email would be sent to:', email, 'with temp password:', tempPassword);
+      return { success: true, message: 'Email service not configured (dev mode)' };
+    }
+
+    try {
+      const template = getWelcomeTemplate(tempPassword, firstName);
+
+      await this.transporter.sendMail({
+        from: emailConfig.from,
+        to: email,
+        subject: template.subject,
+        html: template.html,
+        text: template.text
+      });
+
+      console.log('✅ Welcome email sent to:', email);
+      return { success: true, message: 'Welcome email sent' };
+    } catch (error) {
+      console.error('❌ Error sending welcome email:', error);
+      throw new Error('Failed to send welcome email');
+    }
+  }
+
+  async sendAdminPasswordResetEmail(email, tempPassword, firstName) {
+    if (!this.transporter) {
+      console.log('📧 Admin password reset email would be sent to:', email, 'with temp password:', tempPassword);
+      return { success: true, message: 'Email service not configured (dev mode)' };
+    }
+
+    try {
+      const template = getAdminPasswordResetTemplate(tempPassword, firstName);
+
+      await this.transporter.sendMail({
+        from: emailConfig.from,
+        to: email,
+        subject: template.subject,
+        html: template.html,
+        text: template.text
+      });
+
+      console.log('✅ Admin password reset email sent to:', email);
+      return { success: true, message: 'Admin password reset email sent' };
+    } catch (error) {
+      console.error('❌ Error sending admin password reset email:', error);
+      throw new Error('Failed to send admin password reset email');
     }
   }
 }

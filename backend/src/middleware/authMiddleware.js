@@ -1,5 +1,6 @@
+const { Op } = require('sequelize');
 const tokenService = require('../services/tokenService');
-const { User, Role } = require('../models');
+const { User, Role, UserBan } = require('../models');
 
 const authenticateToken = async (req, res, next) => {
   try {
@@ -40,11 +41,41 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    const activeBan = await UserBan.findOne({
+      where: {
+        user_id: user.id,
+        [Op.or]: [
+          { expires_at: null },
+          { expires_at: { [Op.gt]: new Date() } }
+        ]
+      },
+      order: [['created_at', 'DESC']]
+    });
+
+    if (activeBan) {
+      return res.status(403).json({
+        success: false,
+        message: 'User is banned',
+        data: {
+          ban: {
+            id: activeBan.id,
+            reason: activeBan.reason,
+            ban_type: activeBan.ban_type,
+            expires_at: activeBan.expires_at
+          }
+        }
+      });
+    }
+
     req.user = {
       id: user.id,
       email: user.email,
       roleId: user.role_id,
-      role: user.role.name,
+      role: {
+        id: user.role.id,
+        name: user.role.name
+      },
+      roleName: user.role.name,
       permissions: user.role.permissions
     };
     req.token = token;

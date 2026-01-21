@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
+
 const authRoutes = require('./src/routes/authRoutes');
 const courseRoutes = require('./src/routes/courseRoutes');
 const enrollmentRoutes = require('./src/routes/enrollmentRoutes');
@@ -9,13 +11,18 @@ const assignmentRoutes = require('./src/routes/assignmentRoutes');
 const certificateRoutes = require('./src/routes/certificateRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const adminAnalyticsRoutes = require('./src/routes/adminAnalyticsRoutes');
+const adminRoutes = require('./src/routes/adminRoutes');
+const userPreferenceRoutes = require('./src/routes/userPreferenceRoutes');
 const communicationRoutes = require('./src/routes/communicationRoutes');
+
 const errorHandler = require('./src/middleware/errorHandler');
+const maintenanceMode = require('./src/middleware/maintenanceMode');
 const { generalLimiter } = require('./src/middleware/rateLimiter');
 
 const app = express();
 
 app.use(helmet());
+app.use(compression());
 
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -26,6 +33,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(generalLimiter);
+app.use(maintenanceMode);
 
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -43,6 +51,8 @@ app.use('/api', assignmentRoutes);
 app.use('/api', certificateRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/users', userPreferenceRoutes);
 app.use('/api', communicationRoutes);
 
 app.use((req, res) => {

@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
+const { getRedisClient } = require('../config/redis');
 const { User, Role, PasswordResetToken, AuditLog } = require('../models');
 const { hashPassword, comparePassword } = require('../utils/passwordHash');
 const tokenService = require('./tokenService');
@@ -108,6 +109,17 @@ class AuthService {
 
     const tokens = await tokenService.generateTokens(user);
 
+    const redisClient = getRedisClient();
+    if (redisClient) {
+      const decodedAccess = await tokenService.verifyAccessToken(tokens.accessToken);
+      if (decodedAccess && decodedAccess.exp) {
+        const ttl = decodedAccess.exp - Math.floor(Date.now() / 1000);
+        if (ttl > 0) {
+          await redisClient.setEx(`session:${tokens.accessToken}`, ttl, user.id);
+        }
+      }
+    }
+
     user.last_login = new Date();
     await user.save();
 
@@ -154,6 +166,15 @@ class AuthService {
 
   async logout(token, userId, ipAddress, userAgent) {
     await tokenService.blacklistToken(token);
+
+    const redisClient = getRedisClient();
+    if (redisClient) {
+      try {
+        await redisClient.del(`session:${token}`);
+      } catch (error) {
+        console.warn('⚠️  Failed to delete session key:', error);
+      }
+    }
 
     await AuditLog.create({
       user_id: userId,

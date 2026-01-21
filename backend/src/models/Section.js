@@ -41,5 +41,6 @@ const Section = sequelize.define('Section', {
 });
 
 Section.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
+Course.hasMany(Section, { foreignKey: 'course_id', as: 'sections' });
 
 module.exports = Section;
