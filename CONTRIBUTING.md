@@ -461,7 +461,7 @@ describe('LoginForm', () => {
 - Document all new endpoints
 - Include request/response examples
 - List all possible error responses
-- Update Postman collection
+- Update OpenAPI specification (`backend/openapi.yaml`)
 
 ### Architecture Documentation
 
@@ -469,11 +469,342 @@ describe('LoginForm', () => {
 - Document design decisions
 - Add diagrams for complex features
 
+### Component Documentation
+
+When adding new React components:
+- Update `frontend/COMPONENT_LIBRARY.md`
+- Include props documentation
+- Add usage examples
+- Document accessibility features
+
+## Security Guidelines
+
+### Code Security
+
+**Never commit sensitive data:**
+- No API keys, passwords, or tokens in code
+- Use environment variables for secrets
+- Add sensitive files to `.gitignore`
+- Review commits before pushing
+
+**Input Validation:**
+- Validate all user input on backend
+- Use Joi schemas for validation
+- Sanitize input to prevent XSS
+- Use parameterized queries (Sequelize handles this)
+
+**Authentication & Authorization:**
+- Always check authentication before accessing protected resources
+- Use RBAC middleware for role-based access
+- Never trust client-side validation alone
+- Implement rate limiting on sensitive endpoints
+
+**Error Messages:**
+```javascript
+// Bad: Exposes system details
+throw new Error('Database connection failed: PostgreSQL timeout');
+
+// Good: Generic user-facing message
+throw new Error('Unable to process request. Please try again.');
+// Log detailed error server-side for debugging
+```
+
+**SQL Injection Prevention:**
+```javascript
+// Bad: String concatenation
+const query = `SELECT * FROM users WHERE email = '${email}'`;
+
+// Good: Parameterized query (Sequelize)
+const user = await User.findOne({ where: { email } });
+```
+
+**Dependency Security:**
+```bash
+# Check for vulnerabilities before committing
+npm audit
+
+# Fix vulnerabilities
+npm audit fix
+
+# Update dependencies regularly
+npm update
+```
+
+## Performance Guidelines
+
+### Backend Performance
+
+**Avoid N+1 Queries:**
+```javascript
+// Bad: N+1 queries
+const courses = await Course.findAll();
+for (let course of courses) {
+  course.instructor = await User.findByPk(course.instructorId);
+}
+
+// Good: Eager loading
+const courses = await Course.findAll({
+  include: [{ model: User, as: 'instructor' }]
+});
+```
+
+**Use Pagination:**
+```javascript
+// Always paginate large result sets
+const { page = 1, limit = 20 } = req.query;
+const offset = (page - 1) * limit;
+
+const courses = await Course.findAndCountAll({
+  limit,
+  offset
+});
+```
+
+**Implement Caching:**
+```javascript
+// Cache frequently accessed data
+const cacheKey = `courses:all`;
+const cached = await redis.get(cacheKey);
+
+if (cached) {
+  return JSON.parse(cached);
+}
+
+const courses = await Course.findAll();
+await redis.set(cacheKey, JSON.stringify(courses), 'EX', 300); // 5 min
+return courses;
+```
+
+**Database Indexes:**
+```sql
+-- Add indexes for commonly queried fields
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_enrollments_user_id ON enrollments(user_id);
+```
+
+### Frontend Performance
+
+**Code Splitting:**
+```typescript
+// Lazy load heavy components
+import dynamic from 'next/dynamic';
+
+const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
+  loading: () => <LoadingSpinner />
+});
+```
+
+**Image Optimization:**
+```tsx
+// Use Next.js Image component
+import Image from 'next/image';
+
+<Image 
+  src="/course-thumbnail.jpg"
+  alt="Course thumbnail"
+  width={300}
+  height={200}
+  loading="lazy"
+/>
+```
+
+**Memoization:**
+```typescript
+// Memoize expensive computations
+const expensiveValue = useMemo(() => {
+  return computeExpensiveValue(data);
+}, [data]);
+
+// Memoize callback functions
+const handleClick = useCallback(() => {
+  doSomething(id);
+}, [id]);
+```
+
+**Debounce User Input:**
+```typescript
+// Debounce search input
+const debouncedSearch = useMemo(
+  () => debounce((query) => fetchResults(query), 300),
+  []
+);
+```
+
+## Debugging Guidelines
+
+### Backend Debugging
+
+**Logging:**
+```javascript
+// Use appropriate log levels
+logger.info('User logged in', { userId: user.id });
+logger.warn('Rate limit approaching', { ip: req.ip });
+logger.error('Database error', { error: err.message });
+
+// Avoid logging sensitive data
+// Bad: logger.info('User data', { password: user.password });
+// Good: logger.info('User data', { userId: user.id });
+```
+
+**Debug Mode:**
+```bash
+# Enable debug logging
+DEBUG=* npm run dev
+
+# Node.js inspector
+node --inspect server.js
+# Then open chrome://inspect in Chrome
+```
+
+### Frontend Debugging
+
+**React DevTools:**
+- Install React DevTools browser extension
+- Inspect component tree
+- View props and state
+- Track component re-renders
+
+**Console Debugging:**
+```typescript
+// Temporary debugging (remove before commit)
+console.log('Component rendered', { props, state });
+console.table(arrayData);
+
+// Production debugging with environment check
+if (process.env.NODE_ENV === 'development') {
+  console.debug('Debug info', data);
+}
+```
+
+## Git Workflow
+
+### Branch Strategy
+
+**Branch Types:**
+- `main` - Production-ready code
+- `develop` - Development branch (if using)
+- `feature/*` - New features
+- `fix/*` - Bug fixes
+- `hotfix/*` - Urgent production fixes
+- `docs/*` - Documentation updates
+
+**Branch Naming:**
+```bash
+feature/user-authentication
+fix/login-validation-error
+hotfix/critical-security-patch
+docs/api-documentation-update
+```
+
+### Commit Guidelines
+
+**Commit Message Format:**
+```
+type(scope): subject
+
+body (optional)
+
+footer (optional)
+```
+
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting)
+- `refactor`: Code refactoring
+- `test`: Adding/updating tests
+- `chore`: Maintenance tasks
+
+**Examples:**
+```bash
+feat(auth): add password reset functionality
+
+Implement complete password reset flow including:
+- Email token generation
+- Secure token validation
+- Password update with audit logging
+
+Closes #123
+
+---
+
+fix(courses): resolve pagination issue
+
+Fixed off-by-one error in pagination calculation
+that was causing duplicate results on page boundaries.
+
+Fixes #456
+
+---
+
+docs(api): add examples for all auth endpoints
+
+Added curl and JavaScript examples for each endpoint
+to make API easier to understand and use.
+```
+
+### Pull Request Process
+
+**Before Creating PR:**
+- [ ] Code follows style guidelines
+- [ ] All tests pass (`npm test`)
+- [ ] No console.log or debug code
+- [ ] Documentation updated
+- [ ] Branch is up to date with main
+- [ ] Self-review completed
+
+**PR Description Template:**
+```markdown
+## Description
+Brief description of changes
+
+## Type of Change
+- [ ] Bug fix (non-breaking change)
+- [ ] New feature (non-breaking change)
+- [ ] Breaking change
+- [ ] Documentation update
+
+## How to Test
+1. Step 1
+2. Step 2
+3. Expected result
+
+## Checklist
+- [ ] Code follows style guidelines
+- [ ] Self-review completed
+- [ ] Comments added for complex code
+- [ ] Documentation updated
+- [ ] Tests added/updated
+- [ ] All tests pass
+- [ ] No new warnings
+- [ ] Responsive design verified
+- [ ] Accessibility verified
+
+## Screenshots (if applicable)
+
+## Related Issues
+Closes #123
+```
+
+**Code Review Checklist:**
+
+For Reviewers:
+- [ ] Code is clear and maintainable
+- [ ] No security vulnerabilities
+- [ ] Performance considerations addressed
+- [ ] Error handling is appropriate
+- [ ] Tests cover new functionality
+- [ ] Documentation is accurate
+- [ ] No breaking changes (or properly documented)
+- [ ] Accessibility requirements met
+
 ## Questions?
 
 - Open an issue for questions
-- Join our community chat (if available)
-- Check existing documentation
+- Check existing documentation in `docs/` directory
+- Review [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for common issues
+- See [DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md) for setup help
 
 ## Recognition
 
@@ -481,5 +812,17 @@ Contributors will be:
 - Listed in CONTRIBUTORS.md
 - Credited in release notes
 - Mentioned in project documentation
+
+## Additional Resources
+
+- **API Documentation**: [backend/API_DOCUMENTATION.md](backend/API_DOCUMENTATION.md)
+- **Architecture**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Database Schema**: [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md)
+- **Component Library**: [frontend/COMPONENT_LIBRARY.md](frontend/COMPONENT_LIBRARY.md)
+- **Deployment Guide**: [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)
+- **Troubleshooting**: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+- **Performance**: [backend/PERFORMANCE_GUIDE.md](backend/PERFORMANCE_GUIDE.md)
+- **Security**: [backend/SECURITY_HARDENING_GUIDE.md](backend/SECURITY_HARDENING_GUIDE.md)
+- **Accessibility**: [frontend/ACCESSIBILITY_GUIDE.md](frontend/ACCESSIBILITY_GUIDE.md)
 
 Thank you for contributing to Advanced LMS! 🎓
