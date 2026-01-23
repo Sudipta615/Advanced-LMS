@@ -3,6 +3,7 @@ node_modules/
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+bun.lockb
 
 # Environment variables
 .env
@@ -56,3 +57,4 @@ coverage/
 *.pem
 *.key
 .vercel
+
