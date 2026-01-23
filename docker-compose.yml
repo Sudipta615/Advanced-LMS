@@ -97,6 +97,7 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3001
       NEXT_PUBLIC_APP_NAME: Advanced LMS
+      NEXT_TELEMETRY_DISABLED: 1
     ports:
       - "3000:3000"
     depends_on:
@@ -127,3 +128,4 @@ volumes:
 networks:
   default:
     name: advanced_lms_network
+

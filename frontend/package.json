@@ -3,9 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "bun run dev:node",
+    "dev:node": "next dev",
+    "dev:bun": "bun run --hot next dev",
+    "build": "bun run build:node",
+    "build:node": "next build",
+    "build:bun": "bun run --hot next build",
+    "start": "bun run start:node",
+    "start:node": "next start",
+    "start:bun": "bun run --hot next start",
     "lint": "next lint"
   },
   "dependencies": {
@@ -28,3 +34,4 @@
     "typescript": "^5.3.3"
   }
 }
+
