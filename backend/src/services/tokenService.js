@@ -1,4 +1,4 @@
-const { generateAccessToken, generateRefreshToken, verifyToken } = require('../utils/jwt');
+const { generateAccessToken, generateRefreshToken, verifyToken, verifyRefreshToken } = require('../utils/jwt');
 const { getRedisClient } = require('../config/redis');
 
 class TokenService {
@@ -20,7 +20,7 @@ class TokenService {
   }
 
   async verifyRefreshToken(token) {
-    return verifyToken(token);
+    return verifyRefreshToken(token);
   }
 
   async blacklistToken(token) {

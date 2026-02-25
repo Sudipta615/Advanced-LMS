@@ -58,7 +58,7 @@ export default function StudentAchievementsPage() {
           ]
         }
       };
-      setData(response.data?.data || response.data);
+      setData(response.data as any);
     } catch (err: any) {
       console.error('Failed to fetch achievements:', err);
       setError(err.response?.data?.error || 'Failed to load achievements. Please try again later.');

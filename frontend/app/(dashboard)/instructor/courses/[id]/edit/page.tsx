@@ -15,25 +15,25 @@ interface Category {
 }
 
 interface Course {
-  id: string;
+  id?: string;
   title: string;
-  slug: string;
+  slug?: string;
   description: string;
-  content: string | null;
-  thumbnail_url: string | null;
+  content?: string | null;
+  thumbnail_url?: string | null;
   category_id: string;
   difficulty_level: string;
   estimated_hours: number;
   price: number;
   language: string;
-  status: string;
-  visibility: string;
-  is_featured: boolean;
-  tags: string[];
-  prerequisites: string[];
-  required_score: number;
-  allow_retake: boolean;
-  max_attempts: number | null;
+  status?: string;
+  visibility?: string;
+  is_featured?: boolean;
+  tags?: string[];
+  prerequisites?: string[];
+  required_score?: number;
+  allow_retake?: boolean;
+  max_attempts?: number | null;
 }
 
 export default function EditCoursePage({ params }: { params: { id: string } }) {
