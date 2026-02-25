@@ -98,9 +98,10 @@ export default function CourseContentPage({ params }: { params: { id: string } }
       
       setError(null);
       // You could add a success toast here
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to publish course:', err);
-      setError(err.response?.data?.message || 'Failed to publish course. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to publish course. Please try again.';
+      setError(errorMessage);
     }
   };
   

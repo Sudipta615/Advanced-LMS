@@ -4,7 +4,7 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 FROM base AS builder
@@ -39,6 +39,4 @@ EXPOSE 3000
 
 ENV PORT 3000
 
-CMD ["bun", "run", "start"]
-
-
+CMD ["bun", "run", "server.js"]

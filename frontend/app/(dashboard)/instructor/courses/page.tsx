@@ -19,6 +19,7 @@ interface Course {
   difficulty_level: string;
   estimated_hours: number;
   price: number;
+  instructor_id?: string;
   category: {
     name: string;
   };

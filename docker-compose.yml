@@ -57,6 +57,7 @@ services:
       DATABASE_URL: postgresql://lms_user:lms_password@postgres:5432/advanced_lms
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-refresh-token-secret-change-in-production}
       JWT_EXPIRY: 15m
       REFRESH_TOKEN_EXPIRY: 7d
       EMAIL_SERVICE: smtp
